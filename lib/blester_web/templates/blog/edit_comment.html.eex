@@ -1,0 +1,11 @@
+<div class="comment-form">
+  <h1 class="text-2xl font-bold mb-6">Edit Comment</h1>
+  <form action="/blog/<%= @post.id %>/comments/<%= @comment.id %>/edit" method="post">
+    <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>" />
+    <div class="form-group">
+      <label for="content" class="form-label">Content</label>
+      <textarea name="comment[content]" id="content" required class="form-input w-full h-24"><%= @comment.content %></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Update Comment</button>
+  </form>
+</div>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <title><%= assigns[:page_title] || "Blester" %></title>
+    <link rel="stylesheet" href="/assets/app-1884d92f3c4532c08f02b7a4e9bc6688.css" />
+    <script defer type="text/javascript" src="/assets/app-3abe1a7a6b704dbd7416bf49627e6e26.js"></script>
+  </head>
+  <body>
+    <div class="main-container">
+      <%= @inner_content %>
+    </div>
+  </body>
+</html>

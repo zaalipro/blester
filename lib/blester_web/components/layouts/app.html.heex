@@ -1,0 +1,23 @@
+<header class="nav-header">
+  <div class="nav-container">
+    <a href="/" class="nav-logo">
+      <img src="/images/logo.svg" width="32" height="32" alt="Blester Logo" />
+      <span>Blester</span>
+    </a>
+    <nav class="nav-links">
+      <a href="/blog" class="nav-link">Blog</a>
+      <%= if @current_user_id do %>
+        <a href="/logout" class="nav-link">Logout</a>
+      <% else %>
+        <a href="/login" class="nav-link">Log in</a>
+        <a href="/register" class="nav-link">Register</a>
+      <% end %>
+    </nav>
+  </div>
+</header>
+
+<main class="content-wrapper">
+  <div class="max-w-4xl mx-auto">
+    <%= @inner_content %>
+  </div>
+</main>
