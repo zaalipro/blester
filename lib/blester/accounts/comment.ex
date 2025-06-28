@@ -30,6 +30,10 @@ defmodule Blester.Accounts.Comment do
       accept [:content, :author_id, :post_id]
     end
 
-    defaults [:read, :update, :destroy]
+    update :update do
+      accept [:content]
+    end
+
+    defaults [:read, :destroy]
   end
 end

@@ -6,7 +6,7 @@ defmodule BlesterWeb.BlogController do
   alias Blester.Accounts
 
   plug :require_authenticated_user when action in [:new_post, :create_post, :edit_post, :update_post, :delete_post, :create_comment, :edit_comment, :update_comment, :delete_comment]
-  plug :load_post when action in [:show_post, :edit_post, :update_post, :delete_post, :create_comment]
+  plug :load_post when action in [:show_post, :edit_post, :update_post, :delete_post, :create_comment, :edit_comment, :update_comment, :delete_comment]
   plug :load_comment when action in [:edit_comment, :update_comment, :delete_comment]
 
   def index(conn, params) do
@@ -134,11 +134,20 @@ defmodule BlesterWeb.BlogController do
   def delete_comment(conn, %{"comment_id" => id}) do
     comment = conn.assigns[:comment]
     post = conn.assigns[:post]
-    if comment.author_id == conn.assigns[:current_user_id] do
-      Accounts.delete_comment(id)
-      conn |> put_flash(:info, "Comment deleted!") |> redirect(to: "/blog/#{post.id}")
+
+    if is_nil(comment) do
+      conn |> put_flash(:error, "Comment not found") |> redirect(to: "/blog/#{post.id}")
     else
-      conn |> put_flash(:error, "Not authorized") |> redirect(to: "/blog/#{post.id}")
+      if comment.author_id == conn.assigns[:current_user_id] do
+        case Accounts.delete_comment(id) do
+          :ok ->
+            conn |> put_flash(:info, "Comment deleted!") |> redirect(to: "/blog/#{post.id}")
+          {:error, _} ->
+            conn |> put_flash(:error, "Failed to delete comment") |> redirect(to: "/blog/#{post.id}")
+        end
+      else
+        conn |> put_flash(:error, "Not authorized") |> redirect(to: "/blog/#{post.id}")
+      end
     end
   end
 
