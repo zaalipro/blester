@@ -195,10 +195,10 @@ defmodule Blester.Accounts do
     base_query = Blester.Accounts.Product
     |> Ash.Query.filter(is_active: true)
 
-    # Add search filter
+    # Add search filter (case-insensitive)
     search_query = if search != "" do
       base_query
-      |> Ash.Query.filter(name: [like: "%#{search}%"])
+      |> Ash.Query.filter(name: [ilike: "%#{search}%"])
     else
       base_query
     end
@@ -257,13 +257,13 @@ defmodule Blester.Accounts do
     |> Ash.read_one()
 
     case existing_item do
-      {:ok, item} ->
+      {:ok, item} when not is_nil(item) ->
         # Update quantity
         new_quantity = item.quantity + quantity
         item
         |> Ash.Changeset.for_update(:update, %{quantity: new_quantity})
         |> Ash.update()
-      {:error, _} ->
+      _ ->
         # Create new cart item
         Blester.Accounts.CartItem
         |> Ash.Changeset.for_create(:create, %{

@@ -3,8 +3,9 @@ defmodule BlesterWeb.ShopLive.Show do
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, product: nil, quantity: 1)}
+  def mount(_params, session, socket) do
+    user_id = session["user_id"]
+    {:ok, assign(socket, product: nil, quantity: 1, current_user_id: user_id)}
   end
 
   @impl true

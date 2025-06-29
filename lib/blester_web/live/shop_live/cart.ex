@@ -3,14 +3,15 @@ defmodule BlesterWeb.ShopLive.Cart do
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, _session, socket) do
-    case socket.assigns[:current_user_id] do
+  def mount(_params, session, socket) do
+    user_id = session["user_id"]
+    case user_id do
       nil ->
         {:ok, push_navigate(socket, to: "/login")}
       user_id ->
         cart_items = Accounts.get_user_cart(user_id)
         total = calculate_total(cart_items)
-        {:ok, assign(socket, cart_items: cart_items, total: total)}
+        {:ok, assign(socket, cart_items: cart_items, total: total, current_user_id: user_id)}
     end
   end
 

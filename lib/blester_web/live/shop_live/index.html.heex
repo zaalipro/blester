@@ -36,6 +36,7 @@
           <select 
             phx-change="filter-category" 
             name="category" 
+            value={@category}
             class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">All Categories</option>
@@ -107,19 +108,19 @@
         <nav class="flex items-center space-x-2">
           <%= if @page > 1 do %>
             <%= live_patch "Previous", 
-                to: Routes.shop_index_path(@socket, :index, page: @page - 1),
+                to: "/shop?page=#{@page - 1}",
                 class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
           <% end %>
           
           <%= for page_num <- max(1, @page - 2)..min(total_pages(@total_count, @per_page), @page + 2) do %>
             <%= live_patch page_num, 
-                to: Routes.shop_index_path(@socket, :index, page: page_num),
-                class: "px-3 py-2 text-sm font-medium #{if page_num == @page, do: 'bg-blue-600 text-white', else: 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'} rounded-md" %>
+                to: "/shop?page=#{page_num}",
+                class: "px-3 py-2 text-sm font-medium #{if page_num == @page, do: "bg-blue-600 text-white", else: "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50"} rounded-md" %>
           <% end %>
           
           <%= if @page < total_pages(@total_count, @per_page) do %>
             <%= live_patch "Next", 
-                to: Routes.shop_index_path(@socket, :index, page: @page + 1),
+                to: "/shop?page=#{@page + 1}",
                 class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
           <% end %>
         </nav>
@@ -182,7 +183,7 @@
                   Add to Cart
                 </button>
                 <%= live_patch "View Details", 
-                    to: Routes.shop_show_path(@socket, :show, @quick_view_product.id),
+                    to: "/shop/#{@quick_view_product.id}",
                     class: "w-full bg-gray-100 text-gray-900 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors block text-center" %>
               </div>
             </div>

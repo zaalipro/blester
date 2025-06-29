@@ -3,7 +3,8 @@ defmodule BlesterWeb.ShopLive.Index do
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    user_id = session["user_id"]
     {:ok, assign(socket,
       products: [],
       total_count: 0,
@@ -12,7 +13,9 @@ defmodule BlesterWeb.ShopLive.Index do
       search: "",
       category: "",
       categories: [],
-      loading: false
+      loading: false,
+      quick_view_product: nil,
+      current_user_id: user_id
     )}
   end
 
