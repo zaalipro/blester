@@ -673,4 +673,40 @@ defmodule BlesterWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  @doc """
+  Renders a navigation bar with cart count.
+  """
+  def navigation(assigns) do
+    ~H"""
+    <header class="bg-white border-b border-gray-200 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <a href="/" class="flex items-center space-x-2 text-xl font-bold text-gray-900">
+            <img src="/images/logo.svg" width="32" height="32" alt="Blester Logo" />
+            <span>Blester</span>
+          </a>
+          <nav class="flex items-center space-x-8">
+            <a href="/blog" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Blog</a>
+            <a href="/shop" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Shop</a>
+            <%= if @current_user_id do %>
+              <a href="/cart" class="text-gray-600 hover:text-gray-900 font-medium transition-colors relative">
+                Cart
+                <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center" id="cart-count"><%= @cart_count %></span>
+              </a>
+              <a href="/logout"
+                 onclick="return confirm('Are you sure you want to logout?')"
+                 class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+                Logout
+              </a>
+            <% else %>
+              <a href="/login" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Log in</a>
+              <a href="/register" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Register</a>
+            <% end %>
+          </nav>
+        </div>
+      </div>
+    </header>
+    """
+  end
 end

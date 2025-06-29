@@ -18,19 +18,13 @@ defmodule BlesterWeb.BlogLive.Show do
   @impl true
   def mount(%{"id" => id}, session, socket) do
     user_id = session["user_id"]
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+
     case Accounts.get_post(id) do
       {:ok, post} ->
-        {:ok,
-         socket
-         |> assign(:post, post)
-         |> assign(:new_comment, %{content: ""})
-         |> assign(:page_title, "Post: #{post.title}")
-         |> assign(:current_user_id, user_id)}
+        {:ok, assign(socket, post: post, comment_content: "", errors: %{}, current_user_id: user_id, cart_count: cart_count)}
       {:error, _} ->
-        {:ok,
-         socket
-         |> put_flash(:error, "Post not found")
-         |> push_navigate(to: "/blog")}
+        {:ok, push_navigate(socket, to: "/blog")}
     end
   end
 

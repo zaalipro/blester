@@ -6,12 +6,13 @@ defmodule BlesterWeb.BlogLive.New do
   @impl true
   def mount(_params, session, socket) do
     user_id = session["user_id"]
-    {:ok,
-     socket
-     |> assign(:page_title, "New Post")
-     |> assign(:post, %{"title" => "", "content" => ""})
-     |> assign(:errors, %{})
-     |> assign(:current_user_id, user_id)}
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    case user_id do
+      nil ->
+        {:ok, push_navigate(socket, to: "/login")}
+      user_id ->
+        {:ok, assign(socket, post: %{}, errors: %{}, current_user_id: user_id, cart_count: cart_count)}
+    end
   end
 
   @impl true

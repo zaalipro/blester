@@ -18,19 +18,25 @@ defmodule BlesterWeb.BlogLive.Edit do
   @impl true
   def mount(%{"id" => id}, session, socket) do
     user_id = session["user_id"]
-    case Accounts.get_post(id) do
-      {:ok, post} ->
-        {:ok,
-         socket
-         |> assign(:post, post)
-         |> assign(:page_title, "Edit Post")
-         |> assign(:errors, %{})
-         |> assign(:current_user_id, user_id)}
-      {:error, _} ->
-        {:ok,
-         socket
-         |> put_flash(:error, "Post not found")
-         |> push_navigate(to: "/blog")}
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    case user_id do
+      nil ->
+        {:ok, push_navigate(socket, to: "/login")}
+      user_id ->
+        case Accounts.get_post(id) do
+          {:ok, post} ->
+            if post.author_id == user_id do
+              post_map = %{
+                "title" => post.title,
+                "content" => post.content
+              }
+              {:ok, assign(socket, post: post_map, post_id: id, errors: %{}, current_user_id: user_id, cart_count: cart_count)}
+            else
+              {:ok, push_navigate(socket, to: "/blog")}
+            end
+          {:error, _} ->
+            {:ok, push_navigate(socket, to: "/blog")}
+        end
     end
   end
 

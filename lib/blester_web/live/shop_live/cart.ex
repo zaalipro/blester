@@ -11,7 +11,8 @@ defmodule BlesterWeb.ShopLive.Cart do
       user_id ->
         cart_items = Accounts.get_user_cart(user_id)
         total = calculate_total(cart_items)
-        {:ok, assign(socket, cart_items: cart_items, total: total, current_user_id: user_id)}
+        cart_count = Accounts.get_cart_count(user_id)
+        {:ok, assign(socket, cart_items: cart_items, total: total, current_user_id: user_id, cart_count: cart_count)}
     end
   end
 
@@ -22,7 +23,8 @@ defmodule BlesterWeb.ShopLive.Cart do
       {:ok, _cart_item} ->
         cart_items = Accounts.get_user_cart(socket.assigns.current_user_id)
         total = calculate_total(cart_items)
-        {:noreply, assign(socket, cart_items: cart_items, total: total)}
+        cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
+        {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count)}
       {:error, _changeset} ->
         {:noreply, socket |> put_flash(:error, "Failed to update quantity")}
     end
@@ -34,7 +36,8 @@ defmodule BlesterWeb.ShopLive.Cart do
       {:ok, _} ->
         cart_items = Accounts.get_user_cart(socket.assigns.current_user_id)
         total = calculate_total(cart_items)
-        {:noreply, assign(socket, cart_items: cart_items, total: total) |> put_flash(:info, "Item removed from cart")}
+        cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
+        {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> put_flash(:info, "Item removed from cart")}
       {:error, _} ->
         {:noreply, socket |> put_flash(:error, "Failed to remove item")}
     end

@@ -3,9 +3,16 @@ defmodule BlesterWeb.ShopLive.Show do
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, session, socket) do
+  def mount(%{"id" => id}, session, socket) do
     user_id = session["user_id"]
-    {:ok, assign(socket, product: nil, quantity: 1, current_user_id: user_id)}
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+
+    case Accounts.get_product(id) do
+      {:ok, product} ->
+        {:ok, assign(socket, product: product, current_user_id: user_id, cart_count: cart_count)}
+      {:error, _} ->
+        {:ok, push_navigate(socket, to: "/shop")}
+    end
   end
 
   @impl true
@@ -27,7 +34,10 @@ defmodule BlesterWeb.ShopLive.Show do
         quantity = String.to_integer(quantity)
         case Accounts.add_to_cart(user_id, socket.assigns.product.id, quantity) do
           {:ok, _cart_item} ->
-            {:noreply, socket |> put_flash(:info, "Product added to cart!")}
+            cart_count = Accounts.get_cart_count(user_id)
+            {:noreply, socket
+              |> assign(cart_count: cart_count)
+              |> put_flash(:info, "Product added to cart!")}
           {:error, _changeset} ->
             {:noreply, socket |> put_flash(:error, "Failed to add product to cart")}
         end

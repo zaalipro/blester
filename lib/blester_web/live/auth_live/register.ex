@@ -1,8 +1,16 @@
 defmodule BlesterWeb.AuthLive.Register do
   use BlesterWeb, :live_view
 
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{"email" => "", "password" => "", "password_confirmation" => "", "first_name" => "", "last_name" => "", "country" => ""}))}
+  @impl true
+  def mount(_params, session, socket) do
+    user_id = session["user_id"]
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    case user_id do
+      nil ->
+        {:ok, assign(socket, form: %{}, errors: %{}, cart_count: cart_count)}
+      user_id ->
+        {:ok, push_navigate(socket, to: "/")}
+    end
   end
 
   def handle_event("validate", params, socket) do

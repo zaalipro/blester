@@ -6,9 +6,15 @@ defmodule BlesterWeb.BlogLive.Index do
   @impl true
   def mount(_params, session, socket) do
     user_id = session["user_id"]
-    {:ok,
-     socket
-     |> assign(page_title: "Blog", posts: [], current_page: 1, total_pages: 1, total_count: 0, per_page: 10, current_user_id: user_id)}
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+
+    posts =
+      case Accounts.list_posts() do
+        {:ok, posts} -> posts
+        _ -> []
+      end
+
+    {:ok, assign(socket, posts: posts, errors: %{}, current_user_id: user_id, cart_count: cart_count)}
   end
 
   @impl true

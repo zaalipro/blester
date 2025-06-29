@@ -10,8 +10,19 @@ defmodule BlesterWeb.ShopLive.Checkout do
         {:ok, push_navigate(socket, to: "/login")}
       user_id ->
         cart_items = Accounts.get_user_cart(user_id)
-        total = calculate_total(cart_items)
-        {:ok, assign(socket, cart_items: cart_items, total: total, step: :form, order: nil, error: nil, current_user_id: user_id)}
+        cart_count = Accounts.get_cart_count(user_id)
+        if length(cart_items) == 0 do
+          {:ok, push_navigate(socket, to: "/cart")}
+        else
+          total = calculate_total(cart_items)
+          {:ok, assign(socket,
+            cart_items: cart_items,
+            total: total,
+            current_user_id: user_id,
+            cart_count: cart_count,
+            order_params: %{}
+          )}
+        end
     end
   end
 

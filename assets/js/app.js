@@ -31,19 +31,6 @@ const CategoryFilter = {
   }
 }
 
-// Cart count update handler
-const handleCartCountUpdate = (count) => {
-  const cartCountElement = document.getElementById('cart-count')
-  if (cartCountElement) {
-    cartCountElement.textContent = count
-    // Add a brief animation
-    cartCountElement.classList.add('animate-pulse')
-    setTimeout(() => {
-      cartCountElement.classList.remove('animate-pulse')
-    }, 1000)
-  }
-}
-
 // Auto-dismiss flash messages
 const autoDismissFlashMessages = () => {
   const flashMessages = document.querySelectorAll('[data-flash]')
@@ -72,14 +59,43 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
-// Listen for cart count updates
 liveSocket.connect()
-liveSocket.onMessage((event) => {
-  if (event.event === "update-cart-count") {
-    handleCartCountUpdate(event.payload.count)
-  }
-})
 
 // Auto-dismiss flash messages on page load
 document.addEventListener('DOMContentLoaded', autoDismissFlashMessages)
+
+// Handle category filter change
+document.addEventListener('DOMContentLoaded', function() {
+  const categorySelect = document.getElementById('category-filter');
+  if (categorySelect) {
+    categorySelect.addEventListener('change', function() {
+      const selectedCategory = this.value;
+      const currentUrl = new URL(window.location);
+      
+      if (selectedCategory) {
+        currentUrl.searchParams.set('category', selectedCategory);
+      } else {
+        currentUrl.searchParams.delete('category');
+      }
+      
+      // Remove page parameter when changing category
+      currentUrl.searchParams.delete('page');
+      
+      window.location.href = currentUrl.toString();
+    });
+  }
+});
+
+// Auto-dismiss flash messages
+document.addEventListener('DOMContentLoaded', function() {
+  const flashMessages = document.querySelectorAll('.flash-message');
+  flashMessages.forEach(function(message) {
+    setTimeout(function() {
+      message.style.opacity = '0';
+      setTimeout(function() {
+        message.remove();
+      }, 300);
+    }, 3000);
+  });
+});
 

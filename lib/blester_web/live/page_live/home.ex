@@ -4,7 +4,8 @@ defmodule BlesterWeb.PageLive.Home do
   @impl true
   def mount(_params, session, socket) do
     user_id = session["user_id"]
-    {:ok, assign(socket, current_user_id: user_id, page_title: "Blester")}
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    {:ok, assign(socket, current_user_id: user_id, cart_count: cart_count, page_title: "Blester")}
   end
 
   @impl true

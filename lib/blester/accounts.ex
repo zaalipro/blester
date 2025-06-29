@@ -375,6 +375,16 @@ defmodule Blester.Accounts do
     |> Ash.read!()
   end
 
+  def get_cart_count(user_id) do
+    Blester.Accounts.CartItem
+    |> Ash.Query.filter(user_id: user_id)
+    |> Ash.count()
+    |> case do
+      {:ok, count} -> count
+      _ -> 0
+    end
+  end
+
   def generate_order_number do
     "ORD-" <> :crypto.strong_rand_bytes(6) |> Base.encode16() |> binary_part(0, 12)
   end

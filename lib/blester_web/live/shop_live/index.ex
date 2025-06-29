@@ -5,6 +5,7 @@ defmodule BlesterWeb.ShopLive.Index do
   @impl true
   def mount(_params, session, socket) do
     user_id = session["user_id"]
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
     {:ok, assign(socket,
       products: [],
       total_count: 0,
@@ -16,6 +17,7 @@ defmodule BlesterWeb.ShopLive.Index do
       loading: false,
       quick_view_product: nil,
       current_user_id: user_id,
+      cart_count: cart_count,
       adding_to_cart: []
     )}
   end
@@ -50,10 +52,10 @@ defmodule BlesterWeb.ShopLive.Index do
         case Accounts.add_to_cart(user_id, product_id) do
           {:ok, _cart_item} ->
             # Get updated cart count
-            cart_count = get_cart_count(user_id)
+            cart_count = Accounts.get_cart_count(user_id)
             {:noreply, socket
-              |> put_flash(:info, "Product added to cart!")
-              |> push_event("update-cart-count", %{count: cart_count})}
+              |> assign(cart_count: cart_count)
+              |> put_flash(:info, "Product added to cart!")}
           {:error, _changeset} ->
             {:noreply, socket |> put_flash(:error, "Failed to add product to cart")}
         end
@@ -118,9 +120,6 @@ defmodule BlesterWeb.ShopLive.Index do
   end
 
   defp get_cart_count(user_id) do
-    case Accounts.get_user_cart(user_id) do
-      cart_items when is_list(cart_items) -> length(cart_items)
-      _ -> 0
-    end
+    Accounts.get_cart_count(user_id)
   end
 end
