@@ -51,7 +51,7 @@ defmodule BlesterWeb.LiveView.Authentication do
   Standard mount function for authenticated LiveViews.
   """
   def mount_authenticated(params, session, socket, callback) do
-    user_id = session[:user_id]
+    user_id = session["user_id"]
 
     cart_count = if user_id, do: Blester.Accounts.get_cart_count(user_id), else: 0
     current_user = case user_id do
@@ -67,11 +67,11 @@ defmodule BlesterWeb.LiveView.Authentication do
         {:ok, push_navigate(socket, to: "/login")}
       _user_id ->
         if current_user do
-          socket = Phoenix.LiveView.assign(socket,
+          socket = %{socket | assigns: Map.merge(socket.assigns, %{
             current_user_id: user_id,
             current_user: current_user,
             cart_count: cart_count
-          )
+          })}
           callback.(params, socket)
         else
           {:ok, push_navigate(socket, to: "/login")}

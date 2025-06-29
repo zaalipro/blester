@@ -8,7 +8,7 @@ defmodule BlesterWeb.BlogLive.Index do
     # Debug: Log session and assigns
     IO.inspect(session, label: "Session in BlogLive.Index")
 
-    user_id = session[:user_id]
+    user_id = session["user_id"]
     IO.inspect(user_id, label: "User ID from session")
 
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
