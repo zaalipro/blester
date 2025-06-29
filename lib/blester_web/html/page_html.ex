@@ -18,12 +18,15 @@ defmodule BlesterWeb.PageHTML do
         <%= if @current_user_id do %>
           <div class="space-y-4">
             <p class="text-lg text-gray-700 mb-4">You are logged in!</p>
-            <a href="/logout" class="btn btn-secondary inline-block">Logout</a>
+            <div class="space-x-4">
+              <a href="/blog" class="btn btn-primary inline-block">Blog</a>
+              <a href="/logout" class="btn btn-secondary inline-block">Logout</a>
+            </div>
           </div>
         <% else %>
         <div class="space-y-4">
           <a href="/register" class="btn btn-primary inline-block">Get Started</a>
-          <a href="/login" class="btn btn-secondary inline-block ml-4">Log In</a>
+          <a href="/blog" class="btn btn-secondary inline-block ml-4">Blog</a>
         </div>
         <% end %>
       </div>

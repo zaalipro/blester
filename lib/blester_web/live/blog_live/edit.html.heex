@@ -1,0 +1,57 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-2xl mx-auto">
+    <%= if @post do %>
+      <div class="mb-8">
+        <a href={"/blog/#{@post.id}"} class="text-blue-600 hover:text-blue-800">
+          ← Back to Post
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900 mt-4">Edit Post</h1>
+      </div>
+
+      <form phx-change="validate" phx-submit="save" class="space-y-6">
+        <div>
+          <label for="post_title" class="block text-sm font-medium text-gray-700 mb-2">
+            Title
+          </label>
+          <input
+            type="text"
+            name="post[title]"
+            id="post_title"
+            value={@post.title}
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+          <%= if @errors[:title] do %>
+            <p class="text-red-600 text-sm mt-1"><%= List.first(@errors[:title]) %></p>
+          <% end %>
+        </div>
+
+        <div>
+          <label for="post_content" class="block text-sm font-medium text-gray-700 mb-2">
+            Content
+          </label>
+          <textarea
+            name="post[content]"
+            id="post_content"
+            rows="10"
+            value={@post.content}
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          ></textarea>
+          <%= if @errors[:content] do %>
+            <p class="text-red-600 text-sm mt-1"><%= List.first(@errors[:content]) %></p>
+          <% end %>
+        </div>
+
+        <div class="flex space-x-4">
+          <button type="submit" class="btn btn-primary">
+            Update Post
+          </button>
+          <a href={"/blog/#{@post.id}"} class="btn btn-secondary">
+            Cancel
+          </a>
+        </div>
+      </form>
+    <% end %>
+  </div>
+</div> 

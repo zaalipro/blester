@@ -18,8 +18,8 @@
         Get Started
       </a>
 
-      <a href="/login" class="btn btn-secondary">
-        Sign In
+      <a href="/blog" class="btn btn-secondary">
+        Blog
       </a>
     </div>
 

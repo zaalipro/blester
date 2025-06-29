@@ -8,7 +8,7 @@ defmodule BlesterWeb.Router do
     plug :put_root_layout, html: {BlesterWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug :fetch_current_user
+    plug BlesterWeb.Plugs.SetCurrentUser
   end
 
   pipeline :api do
@@ -22,22 +22,15 @@ defmodule BlesterWeb.Router do
     get "/register", AuthController, :register
     post "/register", AuthController, :create_user
     get "/login", AuthController, :login
-    post "/login", AuthController, :authenticate_user
-    get "/logout", AuthController, :logout
+    post "/login", AuthController, :login_user
+    delete "/logout", AuthController, :logout
 
-    # Blog routes
-    get "/blog", BlogController, :index
-    get "/blog/new", BlogController, :new_post
-    post "/blog", BlogController, :create_post
-    get "/blog/:id", BlogController, :show_post
-    get "/blog/:id/edit", BlogController, :edit_post
-    post "/blog/:id/edit", BlogController, :update_post
-    post "/blog/:id/delete", BlogController, :delete_post
-
-    post "/blog/:post_id/comments", BlogController, :create_comment
-    get "/blog/:post_id/comments/:comment_id/edit", BlogController, :edit_comment
-    post "/blog/:post_id/comments/:comment_id/edit", BlogController, :update_comment
-    post "/blog/:post_id/comments/:comment_id/delete", BlogController, :delete_comment
+    # Blog LiveView routes
+    live "/blog", BlogLive.Index
+    live "/blog/new", BlogLive.New
+    live "/blog/:id", BlogLive.Show
+    live "/blog/:id/edit", BlogLive.Edit
+    live "/blog/:id/comments/:comment_id/edit", BlogLive.EditComment
   end
 
   # Other scopes may use custom stacks.
@@ -45,24 +38,19 @@ defmodule BlesterWeb.Router do
   #   pipe_through :api
   # end
 
-  # Enables LiveDashboard only for development
-  #
-  # If you want to use the LiveDashboard in production, you should put
-  # it behind authentication and allow only admins to access it.
-  # If your application does not have an admins-only section yet,
-  # you can use Plug.BasicAuth to set up some basic authentication
-  # as long as you are also using SSL (which you should anyway).
-  if Mix.env() in [:dev, :test] do
+  # Enable LiveDashboard in development
+  if Application.compile_env(:blester, :dev_routes) do
+    # If you want to use the LiveDashboard in production, you should put
+    # it behind authentication and allow only admins to access it.
+    # If your application does not have an admins-only section yet,
+    # you can use Plug.BasicAuth to set up some basic authentication
+    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
-    scope "/" do
+    scope "/dev" do
       pipe_through :browser
+
       live_dashboard "/dashboard", metrics: BlesterWeb.Telemetry
     end
-  end
-
-  defp fetch_current_user(conn, _opts) do
-    user_id = get_session(conn, :user_id)
-    assign(conn, :current_user_id, user_id)
   end
 end
