@@ -36,7 +36,7 @@ defmodule BlesterWeb.Endpoint do
       transport_options: [max_frame_size: 16_777_216],
       connect_info: [{:session, @session_options}]
     ],
-    longpoll: false
+    longpoll: true
 
   plug Phoenix.LiveDashboard.RequestLogger,
     param_key: "request_logger",

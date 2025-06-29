@@ -16,19 +16,49 @@ defmodule BlesterWeb.BlogLive.EditComment do
   end
 
   @impl true
-  def mount(%{"id" => _id, "comment_id" => comment_id}, session, socket) do
+  def mount(%{"id" => post_id, "comment_id" => comment_id}, session, socket) do
     user_id = session["user_id"]
-    case Accounts.get_comment(comment_id) do
-      {:ok, comment} ->
-        {:ok,
-         socket
-         |> assign(:comment, comment)
-         |> assign(:page_title, "Edit Comment")
-         |> assign(:current_user_id, user_id)}
+
+    case Accounts.get_post(post_id) do
+      {:ok, post} ->
+        case Accounts.get_comment(comment_id) do
+          {:ok, comment} ->
+            user = current_user(%{assigns: %{current_user_id: user_id}})
+            if user && comment.author_id == user.id do
+              # Convert Ash resource to map using Map.from_struct
+              comment_map = Map.from_struct(comment)
+
+              # Create a simple map with the comment data
+              comment_data = %{
+                id: comment_map[:id],
+                content: comment_map[:content],
+                author_id: comment_map[:author_id],
+                post_id: comment_map[:post_id]
+              }
+
+              {:ok,
+               socket
+               |> assign(:comment, comment_data)
+               |> assign(:post, post)
+               |> assign(:page_title, "Edit Comment")
+               |> assign(:current_user_id, user_id)
+               |> assign(:errors, %{})}
+            else
+              {:ok,
+               socket
+               |> put_flash(:error, "Not authorized to edit this comment.")
+               |> push_navigate(to: "/blog/#{post.id}")}
+            end
+          {:error, _} ->
+            {:ok,
+             socket
+             |> put_flash(:error, "Comment not found")
+             |> push_navigate(to: "/blog/#{post.id}")}
+        end
       {:error, _} ->
         {:ok,
          socket
-         |> put_flash(:error, "Comment not found")
+         |> put_flash(:error, "Post not found")
          |> push_navigate(to: "/blog")}
     end
   end
@@ -41,9 +71,20 @@ defmodule BlesterWeb.BlogLive.EditComment do
           {:ok, comment} ->
             user = current_user(socket)
             if user && comment.author_id == user.id do
+              # Convert Ash resource to map using Map.from_struct
+              comment_map = Map.from_struct(comment)
+
+              # Create a simple map with the comment data
+              comment_data = %{
+                id: comment_map[:id],
+                content: comment_map[:content],
+                author_id: comment_map[:author_id],
+                post_id: comment_map[:post_id]
+              }
+
               {:noreply,
                assign(socket,
-                 comment: comment,
+                 comment: comment_data,
                  post: post,
                  page_title: "Edit Comment"
                )}
