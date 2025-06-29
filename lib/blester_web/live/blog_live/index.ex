@@ -5,8 +5,12 @@ defmodule BlesterWeb.BlogLive.Index do
 
   @impl true
   def mount(_params, session, socket) do
-    current_user_id = session["user_id"]
-    {:ok, assign(socket, page_title: "Blog", posts: [], current_page: 1, total_pages: 1, total_count: 0, per_page: 10, current_user_id: current_user_id)}
+    # Get user_id from session (which is populated by the SetCurrentUser plug)
+    user_id = session["user_id"] || session[:user_id]
+    {:ok,
+     socket
+     |> assign(current_user_id: user_id)
+     |> assign(page_title: "Blog", posts: [], current_page: 1, total_pages: 1, total_count: 0, per_page: 10)}
   end
 
   @impl true

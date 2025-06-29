@@ -29,6 +29,15 @@ defmodule BlesterWeb.Endpoint do
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :blester
   end
 
+  # LiveView socket
+  socket "/live", Phoenix.LiveView.Socket,
+    websocket: [
+      timeout: 45_000,
+      transport_options: [max_frame_size: 16_777_216],
+      connect_info: [{:session, @session_options}]
+    ],
+    longpoll: false
+
   plug Phoenix.LiveDashboard.RequestLogger,
     param_key: "request_logger",
     cookie_key: "request_logger"

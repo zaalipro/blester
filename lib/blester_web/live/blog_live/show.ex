@@ -4,9 +4,25 @@ defmodule BlesterWeb.BlogLive.Show do
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, session, socket) do
-    current_user_id = session["user_id"]
-    {:ok, assign(socket, page_title: "Post", post: nil, comments: [], new_comment: %{content: ""}, current_user_id: current_user_id)}
+  def mount(%{"id" => id}, session, socket) do
+    # Get user_id from session (which is populated by the SetCurrentUser plug)
+    user_id = session["user_id"] || session[:user_id]
+    case Accounts.get_post(id) do
+      {:ok, post} ->
+        {:ok,
+         socket
+         |> assign(current_user_id: user_id)
+         |> assign(:post, post)
+         |> assign(:new_comment, %{content: ""})
+         |> assign(:page_title, "Post: #{post.title}")}
+
+      {:error, _} ->
+        {:ok,
+         socket
+         |> assign(current_user_id: user_id)
+         |> put_flash(:error, "Post not found")
+         |> push_navigate(to: "/blog")}
+    end
   end
 
   @impl true
@@ -19,10 +35,11 @@ defmodule BlesterWeb.BlogLive.Show do
              assign(socket,
                post: post,
                comments: comments,
+               new_comment: %{content: ""},
                page_title: post.title
              )}
           {:error, _} ->
-            {:noreply, assign(socket, post: post, comments: [], page_title: post.title)}
+            {:noreply, assign(socket, post: post, comments: [], new_comment: %{content: ""}, page_title: post.title)}
         end
 
       {:error, _} ->
@@ -63,7 +80,11 @@ defmodule BlesterWeb.BlogLive.Show do
 
   @impl true
   def handle_event("validate_comment", %{"comment" => comment_params}, socket) do
-    {:noreply, assign(socket, new_comment: comment_params)}
+    # Convert string keys to atom keys for the template
+    new_comment = for {key, val} <- comment_params, into: %{} do
+      {String.to_atom(key), val}
+    end
+    {:noreply, assign(socket, new_comment: new_comment)}
   end
 
   @impl true

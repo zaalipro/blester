@@ -4,9 +4,33 @@ defmodule BlesterWeb.BlogLive.EditComment do
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, session, socket) do
-    current_user_id = session["user_id"]
-    {:ok, assign(socket, page_title: "Edit Comment", comment: nil, post: nil, errors: [], current_user_id: current_user_id)}
+  def mount(%{"id" => post_id, "comment_id" => comment_id}, session, socket) do
+    # Get user_id from session (which is populated by the SetCurrentUser plug)
+    user_id = session["user_id"] || session[:user_id]
+    case Accounts.get_comment(comment_id) do
+      {:ok, comment} ->
+        if comment.author_id == user_id do
+          {:ok,
+           socket
+           |> assign(current_user_id: user_id)
+           |> assign(:page_title, "Edit Comment")
+           |> assign(:comment, comment)
+           |> assign(:post_id, post_id)}
+        else
+          {:ok,
+           socket
+           |> assign(current_user_id: user_id)
+           |> put_flash(:error, "Not authorized to edit this comment")
+           |> push_navigate(to: "/blog/#{post_id}")}
+        end
+
+      {:error, _} ->
+        {:ok,
+         socket
+         |> assign(current_user_id: user_id)
+         |> put_flash(:error, "Comment not found")
+         |> push_navigate(to: "/blog/#{post_id}")}
+    end
   end
 
   @impl true

@@ -4,9 +4,32 @@ defmodule BlesterWeb.BlogLive.Edit do
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, session, socket) do
-    current_user_id = session["user_id"]
-    {:ok, assign(socket, page_title: "Edit Post", post: nil, errors: [], current_user_id: current_user_id)}
+  def mount(%{"id" => id}, session, socket) do
+    # Get user_id from session (which is populated by the SetCurrentUser plug)
+    user_id = session["user_id"] || session[:user_id]
+    case Accounts.get_post(id) do
+      {:ok, post} ->
+        if post.author_id == user_id do
+          {:ok,
+           socket
+           |> assign(current_user_id: user_id)
+           |> assign(:page_title, "Edit Post")
+           |> assign(:post, post)}
+        else
+          {:ok,
+           socket
+           |> assign(current_user_id: user_id)
+           |> put_flash(:error, "Not authorized to edit this post")
+           |> push_navigate(to: "/blog")}
+        end
+
+      {:error, _} ->
+        {:ok,
+         socket
+         |> assign(current_user_id: user_id)
+         |> put_flash(:error, "Post not found")
+         |> push_navigate(to: "/blog")}
+    end
   end
 
   @impl true

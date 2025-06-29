@@ -48,24 +48,10 @@ defmodule BlesterWeb do
     end
   end
 
-  def view do
-    quote do
-      use Phoenix.View,
-        root: "lib/blester_web/templates",
-        namespace: BlesterWeb
-
-      # Import convenience functions from controllers
-      import Phoenix.Controller,
-        only: [get_csrf_token: 0, view_module: 1, view_template: 1]
-
-      # Include shared imports and aliases for views
-      unquote(html_helpers())
-    end
-  end
-
   def live_view do
     quote do
-      use Phoenix.LiveView
+      use Phoenix.LiveView,
+        layout: {BlesterWeb.Layouts, :app}
 
       unquote(html_helpers())
     end
@@ -84,7 +70,6 @@ defmodule BlesterWeb do
       use Phoenix.Component
       import Phoenix.HTML
       import Phoenix.HTML.Form
-      use PhoenixHTMLHelpers
 
       # Import convenience functions from controllers
       import Phoenix.Controller,
@@ -100,7 +85,6 @@ defmodule BlesterWeb do
       # HTML escaping functionality
       import Phoenix.HTML
       import Phoenix.HTML.Form
-      use PhoenixHTMLHelpers
       # Core UI components and translation
       import BlesterWeb.CoreComponents
       import BlesterWeb.Gettext

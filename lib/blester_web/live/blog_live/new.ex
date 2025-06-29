@@ -5,14 +5,14 @@ defmodule BlesterWeb.BlogLive.New do
 
   @impl true
   def mount(_params, session, socket) do
-    current_user_id = session["user_id"]
+    # Try to get user_id from cookies first, then fall back to session
+    cookies = get_connect_info(socket, :cookies) || %{}
+    user_id = cookies["user_id"] || session["user_id"] || session[:user_id]
     {:ok,
-     assign(socket,
-       page_title: "New Post",
-       post: %{title: "", content: ""},
-       errors: [],
-       current_user_id: current_user_id
-     )}
+     socket
+     |> assign(current_user_id: user_id)
+     |> assign(:page_title, "New Post")
+     |> assign(:post, %{title: "", content: ""})}
   end
 
   @impl true

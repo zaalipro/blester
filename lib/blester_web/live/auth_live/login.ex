@@ -1,60 +1,92 @@
 defmodule BlesterWeb.AuthLive.Login do
   use BlesterWeb, :live_view
 
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, page_title: "Log in")}
+  alias Blester.Accounts
+
+  @impl true
+  def mount(_params, session, socket) do
+    user_id = session["user_id"] || session[:user_id]
+    {:ok,
+     socket
+     |> assign(current_user_id: user_id)
+     |> assign(:page_title, "Log in")
+     |> assign(:user, %{email: "", password: ""})
+     |> assign(:errors, [])}
   end
 
-  def handle_event("login", %{"user" => %{"email" => email, "password" => password}}, socket) do
-    case Blester.Accounts.User.authenticate(email, password) do
-      {:ok, _user} ->
+  @impl true
+  def handle_event("save", %{"user" => user_params}, socket) do
+    case authenticate_user(user_params) do
+      {:ok, user} ->
+        # Redirect to controller action to set session
         {:noreply,
          socket
          |> put_flash(:info, "Welcome back!")
-         |> redirect(to: "/")}
+         |> push_navigate(to: "/auth/set_session?user_id=#{user.id}")}
 
-      {:error, :invalid_password} ->
+      {:error, reason} ->
         {:noreply,
          socket
          |> put_flash(:error, "Invalid email or password")
-         |> assign(error_message: "Invalid email or password")}
-
-      {:error, :user_not_found} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Invalid email or password")
-         |> assign(error_message: "Invalid email or password")}
+         |> assign(user: user_params)
+         |> assign(errors: [reason])}
     end
   end
 
-  def render(assigns) do
-    ~H"""
-    <div class="form-container">
-      <h1 class="text-3xl font-bold text-center mb-2">Log in</h1>
-      <p class="text-center text-gray-600 mb-8">Welcome back</p>
+  @impl true
+  def handle_event("save", params, socket) do
+    # Handle the case where params come directly without the "user" wrapper
+    user_params = %{
+      "email" => params["email"] || "",
+      "password" => params["password"] || ""
+    }
 
-      <form phx-submit="login">
-        <div class="form-group">
-          <label for="email" class="form-label">Email</label>
-          <input type="email" name="user[email]" id="email" required class="form-input" />
-        </div>
+    case authenticate_user(user_params) do
+      {:ok, user} ->
+        # Redirect to controller action to set session
+        {:noreply,
+         socket
+         |> put_flash(:info, "Welcome back!")
+         |> push_navigate(to: "/auth/set_session?user_id=#{user.id}")}
 
-        <div class="form-group">
-          <label for="password" class="form-label">Password</label>
-          <input type="password" name="user[password]" id="password" required class="form-input" />
-        </div>
-
-        <div class="form-group">
-          <button type="submit" phx-disable-with="Signing in..." class="btn btn-primary w-full">
-            Log in
-          </button>
-        </div>
-      </form>
-
-      <p class="text-center mt-6">
-        Don't have an account? <a href="/register" class="text-blue-600 hover:text-blue-800 font-semibold">Register</a>
-      </p>
-    </div>
-    """
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Invalid email or password")
+         |> assign(user: user_params)
+         |> assign(errors: [reason])}
+    end
   end
+
+  @impl true
+  def handle_event("validate", %{"user" => user_params}, socket) do
+    {:noreply, assign(socket, user: user_params)}
+  end
+
+  @impl true
+  def handle_event("validate", params, socket) do
+    # Handle individual field validation
+    current_user = socket.assigns.user
+
+    # Update only the field that changed, preserving all others
+    user_params = cond do
+      Map.has_key?(params, "email") ->
+        Map.put(current_user, "email", params["email"])
+      Map.has_key?(params, "password") ->
+        Map.put(current_user, "password", params["password"])
+      true ->
+        current_user  # No changes, preserve current state
+    end
+
+    {:noreply, assign(socket, user: user_params)}
+  end
+
+  defp authenticate_user(%{"email" => email, "password" => password}) do
+    case Accounts.User.authenticate(email, password) do
+      {:ok, user} -> {:ok, user}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp authenticate_user(_), do: {:error, "Invalid credentials"}
 end

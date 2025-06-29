@@ -19,11 +19,12 @@ defmodule BlesterWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
-    get "/register", AuthController, :register
-    post "/register", AuthController, :create_user
-    get "/login", AuthController, :login
-    post "/login", AuthController, :login_user
-    delete "/logout", AuthController, :logout
+    delete "/logout", PageController, :logout
+    get "/auth/set_session", PageController, :set_session
+
+    # Auth LiveView routes
+    live "/login", AuthLive.Login
+    live "/register", AuthLive.Register
 
     # Blog LiveView routes
     live "/blog", BlogLive.Index

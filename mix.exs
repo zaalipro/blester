@@ -36,7 +36,7 @@ defmodule Blester.MixProject do
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_reload, "~> 1.4", only: :dev},
-      {:phoenix_live_view, "~> 1.0"},
+      {:phoenix_live_view, "~> 1.1.0-rc.1"},
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.2"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
@@ -62,7 +62,6 @@ defmodule Blester.MixProject do
       {:ash_phoenix, "~> 2.3.9"},
       {:ash_postgres, "~> 2.6.9"},
       {:ash_authentication, "~> 4.9.4"},
-      {:ash_authentication_phoenix, "~> 2.10.1"},
       {:bcrypt_elixir, "~> 3.0"}
     ]
   end
