@@ -11,6 +11,10 @@ defmodule Blester.Accounts do
     resource Blester.Accounts.CartItem
     resource Blester.Accounts.Order
     resource Blester.Accounts.OrderItem
+    resource Blester.Accounts.Property
+    resource Blester.Accounts.Favorite
+    resource Blester.Accounts.Inquiry
+    resource Blester.Accounts.Viewing
   end
 
   # Generic pagination helper
@@ -590,5 +594,251 @@ defmodule Blester.Accounts do
 
   def update_user_role(id, role) do
     update_resource(Blester.Accounts.User, id, %{role: role}, :user_not_found)
+  end
+
+  # Property functions
+  def create_property(attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
+    Blester.Accounts.Property
+    |> Ash.Changeset.for_create(:create, attrs)
+    |> Ash.create()
+  end
+
+  def get_property(id) do
+    Blester.Accounts.Property
+    |> Ash.Query.filter(id: id)
+    |> Ash.Query.load([:agent, :owner])
+    |> Ash.read_one()
+  end
+
+  def list_properties do
+    Blester.Accounts.Property
+    |> Ash.Query.load([:agent, :owner])
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.read()
+  end
+
+  def update_property(id, attrs) do
+    update_resource(Blester.Accounts.Property, id, attrs, :property_not_found)
+  end
+
+  def delete_property(id) do
+    delete_resource(Blester.Accounts.Property, id, :property_not_found)
+  end
+
+  def list_properties_paginated(limit, offset, search \\ "", filters \\ %{}) do
+    base_query = Blester.Accounts.Property
+    |> Ash.Query.filter(status: "active")
+    |> Ash.Query.sort(inserted_at: :desc)
+
+    # Apply search
+    base_query = if search != "" do
+      base_query
+      |> Ash.Query.filter([
+        or: [
+          [title: [ilike: "%#{search}%"]],
+          [description: [ilike: "%#{search}%"]],
+          [address: [ilike: "%#{search}%"]],
+          [city: [ilike: "%#{search}%"]]
+        ]
+      ])
+    else
+      base_query
+    end
+
+    # Apply filters
+    base_query = apply_property_filters(base_query, filters)
+
+    # Get total count
+    total_count = case Ash.count(base_query) do
+      {:ok, count} -> count
+      _ -> 0
+    end
+
+    # Get paginated results
+    properties = base_query
+    |> Ash.Query.limit(limit)
+    |> Ash.Query.offset(offset)
+    |> Ash.Query.load([:agent, :owner])
+    |> case do
+      {:ok, results} -> results
+      _ -> []
+    end
+
+    {:ok, {properties, total_count}}
+  end
+
+  defp apply_property_filters(query, filters) do
+    Enum.reduce(filters, query, fn {key, value}, acc ->
+      case {key, value} do
+        {"property_type", value} when value != "all" and value != "" ->
+          Ash.Query.filter(acc, property_type: value)
+
+        {"min_price", value} when value != "" ->
+          case Decimal.parse(value) do
+            {:ok, price} -> Ash.Query.filter(acc, price: [gte: price])
+            _ -> acc
+          end
+
+        {"max_price", value} when value != "" ->
+          case Decimal.parse(value) do
+            {:ok, price} -> Ash.Query.filter(acc, price: [lte: price])
+            _ -> acc
+          end
+
+        {"bedrooms", value} when value != "all" and value != "" ->
+          case Integer.parse(value) do
+            {beds, _} -> Ash.Query.filter(acc, bedrooms: beds)
+            _ -> acc
+          end
+
+        {"bathrooms", value} when value != "all" and value != "" ->
+          case Integer.parse(value) do
+            {baths, _} -> Ash.Query.filter(acc, bathrooms: baths)
+            _ -> acc
+          end
+
+        {"city", value} when value != "all" and value != "" ->
+          Ash.Query.filter(acc, city: value)
+
+        {"state", value} when value != "all" and value != "" ->
+          Ash.Query.filter(acc, state: value)
+
+        {"status", value} when value != "all" and value != "" ->
+          Ash.Query.filter(acc, status: value)
+
+        _ -> acc
+      end
+    end)
+  end
+
+  # Favorite functions
+  def create_favorite(user_id, property_id) do
+    Blester.Accounts.Favorite
+    |> Ash.Changeset.for_create(:create, %{
+      user_id: user_id,
+      property_id: property_id
+    })
+    |> Ash.create()
+  end
+
+  def remove_favorite(user_id, property_id) do
+    Blester.Accounts.Favorite
+    |> Ash.Query.filter(user_id: user_id, property_id: property_id)
+    |> Ash.read_one()
+    |> case do
+      {:ok, favorite} ->
+        Ash.destroy(favorite)
+      _ ->
+        {:error, :favorite_not_found}
+    end
+  end
+
+  def is_favorite(user_id, property_id) do
+    Blester.Accounts.Favorite
+    |> Ash.Query.filter(user_id: user_id, property_id: property_id)
+    |> Ash.read_one()
+    |> case do
+      {:ok, _favorite} -> true
+      _ -> false
+    end
+  end
+
+  def get_user_favorites(user_id) do
+    Blester.Accounts.Favorite
+    |> Ash.Query.filter(user_id: user_id)
+    |> Ash.Query.load([:property])
+    |> Ash.read()
+  end
+
+  # Inquiry functions
+  def create_inquiry(attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
+    Blester.Accounts.Inquiry
+    |> Ash.Changeset.for_create(:create, attrs)
+    |> Ash.create()
+  end
+
+  def get_inquiry(id) do
+    Blester.Accounts.Inquiry
+    |> Ash.Query.filter(id: id)
+    |> Ash.Query.load([:user, :property, :agent])
+    |> Ash.read_one()
+  end
+
+  def list_user_inquiries(user_id) do
+    Blester.Accounts.Inquiry
+    |> Ash.Query.filter(user_id: user_id)
+    |> Ash.Query.load([:property, :agent])
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.read()
+  end
+
+  def list_agent_inquiries(agent_id) do
+    Blester.Accounts.Inquiry
+    |> Ash.Query.filter(agent_id: agent_id)
+    |> Ash.Query.load([:user, :property])
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.read()
+  end
+
+  def update_inquiry_status(id, status) do
+    update_resource(Blester.Accounts.Inquiry, id, %{status: status}, :inquiry_not_found)
+  end
+
+  # Viewing functions
+  def create_viewing(attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
+    Blester.Accounts.Viewing
+    |> Ash.Changeset.for_create(:create, attrs)
+    |> Ash.create()
+  end
+
+  def get_viewing(id) do
+    Blester.Accounts.Viewing
+    |> Ash.Query.filter(id: id)
+    |> Ash.Query.load([:user, :property, :agent])
+    |> Ash.read_one()
+  end
+
+  def list_user_viewings(user_id) do
+    Blester.Accounts.Viewing
+    |> Ash.Query.filter(user_id: user_id)
+    |> Ash.Query.load([:property, :agent])
+    |> Ash.Query.sort(scheduled_date: :asc)
+    |> Ash.read()
+  end
+
+  def list_agent_viewings(agent_id) do
+    Blester.Accounts.Viewing
+    |> Ash.Query.filter(agent_id: agent_id)
+    |> Ash.Query.load([:user, :property])
+    |> Ash.Query.sort(scheduled_date: :asc)
+    |> Ash.read()
+  end
+
+  def update_viewing_status(id, status) do
+    update_resource(Blester.Accounts.Viewing, id, %{status: status}, :viewing_not_found)
   end
 end

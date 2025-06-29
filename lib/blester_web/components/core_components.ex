@@ -688,6 +688,7 @@ defmodule BlesterWeb.CoreComponents do
           </a>
           <nav class="flex items-center space-x-8">
             <a href="/blog" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Blog</a>
+            <a href="/properties" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Properties</a>
             <a href="/shop" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Shop</a>
             <%= if @current_user_id do %>
               <%= if Map.get(assigns, :current_user) && Map.get(assigns, :current_user).role == "admin" do %>

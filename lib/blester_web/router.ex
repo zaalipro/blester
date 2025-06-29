@@ -27,6 +27,8 @@ defmodule BlesterWeb.Router do
     live "/blog", BlogLive.Index
     live "/shop", ShopLive.Index
     live "/shop/:id", ShopLive.Show
+    live "/properties", RealtorLive.Index
+    live "/properties/:id", RealtorLive.Show
   end
 
   # Protected routes (authentication required)
