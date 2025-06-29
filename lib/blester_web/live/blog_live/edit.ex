@@ -24,6 +24,7 @@ defmodule BlesterWeb.BlogLive.Edit do
          socket
          |> assign(:post, post)
          |> assign(:page_title, "Edit Post")
+         |> assign(:errors, %{})
          |> assign(:current_user_id, user_id)}
       {:error, _} ->
         {:ok,
@@ -42,7 +43,8 @@ defmodule BlesterWeb.BlogLive.Edit do
           {:noreply,
            assign(socket,
              post: post,
-             page_title: "Edit: #{post.title}"
+             page_title: "Edit: #{post.title}",
+             errors: %{}
            )}
         else
           {:noreply,
@@ -62,7 +64,13 @@ defmodule BlesterWeb.BlogLive.Edit do
   def handle_event("save", %{"post" => post_params}, socket) do
     post = socket.assigns.post
 
-    case Accounts.update_post(post.id, post_params) do
+    # Convert string keys to atom keys for Ash
+    attrs = %{
+      title: post_params["title"],
+      content: post_params["content"]
+    }
+
+    case Accounts.update_post(post.id, attrs) do
       {:ok, updated_post} ->
         {:noreply,
          socket

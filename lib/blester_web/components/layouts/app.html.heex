@@ -7,7 +7,12 @@
       </a>
       <nav class="flex items-center space-x-8">
         <a href="/blog" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Blog</a>
-        <%= if @current_user_id do %>
+        <a href="/shop" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Shop</a>
+        <%= if assigns[:current_user_id] do %>
+          <a href="/cart" class="text-gray-600 hover:text-gray-900 font-medium transition-colors relative">
+            Cart
+            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center" id="cart-count">0</span>
+          </a>
           <a href="/logout" 
              onclick="return confirm('Are you sure you want to logout?')"
              class="text-gray-600 hover:text-gray-900 font-medium transition-colors">

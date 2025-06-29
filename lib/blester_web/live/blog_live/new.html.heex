@@ -16,12 +16,12 @@
           type="text"
           name="post[title]"
           id="post_title"
-          value={@post.title}
+          value={@post["title"]}
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         />
-        <%= if @errors[:title] do %>
-          <p class="text-red-600 text-sm mt-1"><%= List.first(@errors[:title]) %></p>
+        <%= if @errors["title"] do %>
+          <p class="text-red-600 text-sm mt-1"><%= List.first(@errors["title"]) %></p>
         <% end %>
       </div>
 
@@ -33,12 +33,12 @@
           name="post[content]"
           id="post_content"
           rows="10"
-          value={@post.content}
+          value={@post["content"]}
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         ></textarea>
-        <%= if @errors[:content] do %>
-          <p class="text-red-600 text-sm mt-1"><%= List.first(@errors[:content]) %></p>
+        <%= if @errors["content"] do %>
+          <p class="text-red-600 text-sm mt-1"><%= List.first(@errors["content"]) %></p>
         <% end %>
       </div>
 

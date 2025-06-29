@@ -28,12 +28,12 @@ defmodule BlesterWeb.BlogLive.EditComment do
               # Convert Ash resource to map using Map.from_struct
               comment_map = Map.from_struct(comment)
 
-              # Create a simple map with the comment data
+              # Create a simple map with the comment data using string keys
               comment_data = %{
-                id: comment_map[:id],
-                content: comment_map[:content],
-                author_id: comment_map[:author_id],
-                post_id: comment_map[:post_id]
+                "id" => comment_map[:id],
+                "content" => comment_map[:content],
+                "author_id" => comment_map[:author_id],
+                "post_id" => comment_map[:post_id]
               }
 
               {:ok,
@@ -74,19 +74,20 @@ defmodule BlesterWeb.BlogLive.EditComment do
               # Convert Ash resource to map using Map.from_struct
               comment_map = Map.from_struct(comment)
 
-              # Create a simple map with the comment data
+              # Create a simple map with the comment data using string keys
               comment_data = %{
-                id: comment_map[:id],
-                content: comment_map[:content],
-                author_id: comment_map[:author_id],
-                post_id: comment_map[:post_id]
+                "id" => comment_map[:id],
+                "content" => comment_map[:content],
+                "author_id" => comment_map[:author_id],
+                "post_id" => comment_map[:post_id]
               }
 
               {:noreply,
                assign(socket,
                  comment: comment_data,
                  post: post,
-                 page_title: "Edit Comment"
+                 page_title: "Edit Comment",
+                 errors: %{}
                )}
             else
               {:noreply,
@@ -112,7 +113,12 @@ defmodule BlesterWeb.BlogLive.EditComment do
   def handle_event("save", %{"comment" => comment_params}, socket) do
     comment = socket.assigns.comment
 
-    case Accounts.update_comment(comment.id, comment_params) do
+    # Convert string keys to atom keys for Ash
+    attrs = %{
+      content: comment_params["content"]
+    }
+
+    case Accounts.update_comment(comment["id"], attrs) do
       {:ok, _updated_comment} ->
         {:noreply,
          socket

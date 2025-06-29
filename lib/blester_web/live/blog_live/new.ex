@@ -9,7 +9,8 @@ defmodule BlesterWeb.BlogLive.New do
     {:ok,
      socket
      |> assign(:page_title, "New Post")
-     |> assign(:post, %{title: "", content: ""})
+     |> assign(:post, %{"title" => "", "content" => ""})
+     |> assign(:errors, %{})
      |> assign(:current_user_id, user_id)}
   end
 
@@ -17,20 +18,33 @@ defmodule BlesterWeb.BlogLive.New do
   def handle_event("save", %{"post" => post_params}, socket) do
     user = current_user(socket)
     author_id = user && user.id
-    attrs = Map.put(post_params, "author_id", author_id)
 
-    case Accounts.create_post(attrs) do
-      {:ok, post} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Post created successfully.")
-         |> push_navigate(to: "/blog/#{post.id}")}
-      {:error, changeset} ->
-        {:noreply,
-         assign(socket,
-           post: post_params,
-           errors: format_errors(changeset)
-         )}
+    if author_id do
+      # Convert string keys to atom keys for Ash
+      attrs = %{
+        title: post_params["title"],
+        content: post_params["content"],
+        author_id: author_id
+      }
+
+      case Accounts.create_post(attrs) do
+        {:ok, post} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Post created successfully.")
+           |> push_navigate(to: "/blog/#{post.id}")}
+        {:error, changeset} ->
+          {:noreply,
+           assign(socket,
+             post: post_params,
+             errors: format_errors(changeset)
+           )}
+      end
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "You must be logged in to create a post.")
+       |> push_navigate(to: "/login")}
     end
   end
 

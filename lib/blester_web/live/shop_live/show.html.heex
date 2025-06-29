@@ -1,0 +1,142 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <%= if @product do %>
+      <!-- Breadcrumb -->
+      <nav class="mb-8">
+        <ol class="flex items-center space-x-2 text-sm text-gray-600">
+          <li><%= live_patch "Shop", to: Routes.shop_index_path(@socket, :index), class: "hover:text-blue-600" %></li>
+          <li><span>/</span></li>
+          <li><%= live_patch @product.category, to: Routes.shop_index_path(@socket, :index, category: @product.category), class: "hover:text-blue-600" %></li>
+          <li><span>/</span></li>
+          <li class="text-gray-900"><%= @product.name %></li>
+        </ol>
+      </nav>
+
+      <!-- Product Details -->
+      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Product Image -->
+          <div class="p-8">
+            <div class="aspect-square overflow-hidden rounded-lg">
+              <img 
+                src={@product.image_url} 
+                alt={@product.name}
+                class="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
+          <!-- Product Info -->
+          <div class="p-8">
+            <div class="mb-6">
+              <h1 class="text-3xl font-bold text-gray-900 mb-2"><%= @product.name %></h1>
+              <p class="text-2xl font-bold text-blue-600 mb-4">$<%= format_price(@product.price) %></p>
+              <div class="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+                <span>SKU: <%= @product.sku %></span>
+                <span>Category: <%= @product.category %></span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-600">Stock:</span>
+                <span class={"text-sm font-medium #{if @product.stock_quantity > 0, do: "text-green-600", else: "text-red-600"}"}>
+                  <%= if @product.stock_quantity > 0 do %>
+                    <%= @product.stock_quantity %> available
+                  <% else %>
+                    Out of stock
+                  <% end %>
+                </span>
+              </div>
+            </div>
+
+            <div class="mb-8">
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+              <p class="text-gray-600 leading-relaxed"><%= @product.description %></p>
+            </div>
+
+            <%= if @product.stock_quantity > 0 do %>
+              <div class="space-y-4">
+                <!-- Quantity Selector -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                  <div class="flex items-center space-x-3">
+                    <button 
+                      phx-click="update-quantity" 
+                      phx-value-quantity={@quantity - 1}
+                      disabled={@quantity <= 1}
+                      class="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                      </svg>
+                    </button>
+                    <input 
+                      type="number" 
+                      value={@quantity}
+                      min="1"
+                      max={@product.stock_quantity}
+                      phx-change="update-quantity"
+                      name="quantity"
+                      class="w-16 text-center border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button 
+                      phx-click="update-quantity" 
+                      phx-value-quantity={@quantity + 1}
+                      disabled={@quantity >= @product.stock_quantity}
+                      class="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Add to Cart Button -->
+                <form phx-submit="add-to-cart" class="space-y-4">
+                  <input type="hidden" name="quantity" value={@quantity} />
+                  <button 
+                    type="submit"
+                    class="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
+                    </svg>
+                    <span>Add to Cart</span>
+                  </button>
+                </form>
+
+                <!-- Total Price -->
+                <div class="text-center">
+                  <span class="text-sm text-gray-600">Total: </span>
+                  <span class="text-lg font-bold text-blue-600">$<%= format_price(Decimal.mult(@product.price, @quantity)) %></span>
+                </div>
+              </div>
+            <% else %>
+              <div class="bg-gray-100 rounded-lg p-4 text-center">
+                <p class="text-gray-600 font-medium">This product is currently out of stock</p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Products Section -->
+      <div class="mt-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-8">Related Products</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- This would be populated with related products from the same category -->
+          <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+            <p class="text-gray-600">More products coming soon...</p>
+          </div>
+        </div>
+      </div>
+    <% else %>
+      <div class="text-center py-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Product not found</h2>
+        <p class="text-gray-600 mb-8">The product you're looking for doesn't exist or has been removed.</p>
+        <%= live_patch "Back to Shop", 
+            to: Routes.shop_index_path(@socket, :index),
+            class: "bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors" %>
+      </div>
+    <% end %>
+  </div>
+</div> 

@@ -33,6 +33,8 @@ defmodule Blester.Accounts.User do
   relationships do
     has_many :posts, Blester.Accounts.Post, destination_attribute: :author_id
     has_many :comments, Blester.Accounts.Comment, destination_attribute: :author_id
+    has_many :cart_items, Blester.Accounts.CartItem, destination_attribute: :user_id
+    has_many :orders, Blester.Accounts.Order, destination_attribute: :user_id
   end
 
   actions do

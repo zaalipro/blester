@@ -1,0 +1,194 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Hero Section -->
+  <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div class="text-center">
+        <h1 class="text-4xl font-bold mb-4">Discover Amazing Products</h1>
+        <p class="text-xl opacity-90">Find the perfect items for your lifestyle</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Filter Section -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Search -->
+        <div>
+          <form phx-submit="search" class="flex">
+            <input 
+              type="text" 
+              name="search" 
+              value={@search}
+              placeholder="Search products..." 
+              class="flex-1 rounded-l-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- Category Filter -->
+        <div>
+          <select 
+            phx-change="filter-category" 
+            name="category" 
+            class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">All Categories</option>
+            <%= for category <- @categories do %>
+              <option value={category} selected={@category == category}><%= category %></option>
+            <% end %>
+          </select>
+        </div>
+
+        <!-- Results Count -->
+        <div class="flex items-center justify-end text-gray-600">
+          <span><%= @total_count %> products found</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <%= for product <- @products do %>
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
+          <!-- Product Image -->
+          <div class="relative aspect-square overflow-hidden">
+            <img 
+              src={product.image_url} 
+              alt={product.name}
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <!-- Quick View Overlay -->
+            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
+              <button 
+                phx-click="quick-view" 
+                phx-value-product-id={product.id}
+                class="opacity-0 group-hover:opacity-100 bg-white text-gray-900 px-4 py-2 rounded-lg font-medium transition-opacity duration-300 hover:bg-gray-100"
+              >
+                Quick View
+              </button>
+            </div>
+            <!-- Add to Cart Button -->
+            <button 
+              phx-click="add-to-cart" 
+              phx-value-product-id={product.id}
+              class="absolute top-2 right-2 bg-blue-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-blue-700"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Product Info -->
+          <div class="p-4">
+            <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2"><%= product.name %></h3>
+            <p class="text-gray-600 text-sm mb-3 line-clamp-2"><%= product.description %></p>
+            <div class="flex items-center justify-between">
+              <span class="text-lg font-bold text-blue-600">$<%= format_price(product.price) %></span>
+              <span class="text-sm text-gray-500"><%= product.category %></span>
+            </div>
+            <div class="mt-3">
+              <span class="text-xs text-gray-500">Stock: <%= product.stock_quantity %></span>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Pagination -->
+    <%= if @total_count > @per_page do %>
+      <div class="mt-12 flex justify-center">
+        <nav class="flex items-center space-x-2">
+          <%= if @page > 1 do %>
+            <%= live_patch "Previous", 
+                to: Routes.shop_index_path(@socket, :index, page: @page - 1),
+                class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
+          <% end %>
+          
+          <%= for page_num <- max(1, @page - 2)..min(total_pages(@total_count, @per_page), @page + 2) do %>
+            <%= live_patch page_num, 
+                to: Routes.shop_index_path(@socket, :index, page: page_num),
+                class: "px-3 py-2 text-sm font-medium #{if page_num == @page, do: 'bg-blue-600 text-white', else: 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'} rounded-md" %>
+          <% end %>
+          
+          <%= if @page < total_pages(@total_count, @per_page) do %>
+            <%= live_patch "Next", 
+                to: Routes.shop_index_path(@socket, :index, page: @page + 1),
+                class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
+          <% end %>
+        </nav>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Quick View Modal -->
+  <%= if @quick_view_product do %>
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex justify-between items-start mb-4">
+            <h2 class="text-2xl font-bold text-gray-900"><%= @quick_view_product.name %></h2>
+            <button 
+              phx-click="close-quick-view"
+              class="text-gray-400 hover:text-gray-600"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <img 
+                src={@quick_view_product.image_url} 
+                alt={@quick_view_product.name}
+                class="w-full rounded-lg"
+              />
+            </div>
+            <div>
+              <p class="text-gray-600 mb-4"><%= @quick_view_product.description %></p>
+              <div class="space-y-3">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Price:</span>
+                  <span class="text-2xl font-bold text-blue-600">$<%= format_price(@quick_view_product.price) %></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Category:</span>
+                  <span class="text-gray-900"><%= @quick_view_product.category %></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Stock:</span>
+                  <span class="text-gray-900"><%= @quick_view_product.stock_quantity %></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">SKU:</span>
+                  <span class="text-gray-900"><%= @quick_view_product.sku %></span>
+                </div>
+              </div>
+              
+              <div class="mt-6 space-y-3">
+                <button 
+                  phx-click="add-to-cart" 
+                  phx-value-product-id={@quick_view_product.id}
+                  class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Add to Cart
+                </button>
+                <%= live_patch "View Details", 
+                    to: Routes.shop_show_path(@socket, :show, @quick_view_product.id),
+                    class: "w-full bg-gray-100 text-gray-900 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors block text-center" %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div> 
