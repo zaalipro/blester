@@ -13,9 +13,10 @@ defmodule BlesterWeb.ShopLive.Cart do
       user_id ->
         case Accounts.get_cart_items(user_id) do
           {:ok, cart_items} ->
-            {:ok, assign(socket, cart_items: cart_items, current_user_id: user_id, cart_count: cart_count)}
+            total = calculate_total(cart_items)
+            {:ok, assign(socket, cart_items: cart_items, total: total, current_user_id: user_id, cart_count: cart_count)}
           {:error, _} ->
-            {:ok, assign(socket, cart_items: [], current_user_id: user_id, cart_count: cart_count)}
+            {:ok, assign(socket, cart_items: [], total: Decimal.new(0), current_user_id: user_id, cart_count: cart_count)}
         end
     end
   end
@@ -27,7 +28,8 @@ defmodule BlesterWeb.ShopLive.Cart do
         case Accounts.get_cart_items(socket.assigns.current_user_id) do
           {:ok, cart_items} ->
             cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
-            {:noreply, assign(socket, cart_items: cart_items, cart_count: cart_count) |> add_flash_timer(:info, "Cart updated")}
+            total = calculate_total(cart_items)
+            {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Cart updated")}
           {:error, _} ->
             {:noreply, add_flash_timer(socket, :error, "Failed to update cart")}
         end
@@ -43,7 +45,8 @@ defmodule BlesterWeb.ShopLive.Cart do
         case Accounts.get_cart_items(socket.assigns.current_user_id) do
           {:ok, cart_items} ->
             cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
-            {:noreply, assign(socket, cart_items: cart_items, cart_count: cart_count) |> add_flash_timer(:info, "Item removed from cart")}
+            total = calculate_total(cart_items)
+            {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Item removed from cart")}
           {:error, _} ->
             {:noreply, add_flash_timer(socket, :error, "Failed to update cart")}
         end
@@ -53,7 +56,7 @@ defmodule BlesterWeb.ShopLive.Cart do
   end
 
   @impl true
-  def handle_event("checkout", _params, socket) do
+  def handle_event("proceed-to-checkout", _params, socket) do
     {:noreply, push_navigate(socket, to: "/shop/checkout")}
   end
 
