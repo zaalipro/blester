@@ -15,38 +15,43 @@ defmodule BlesterWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Public routes (no authentication required)
   scope "/", BlesterWeb do
     pipe_through :browser
 
     live "/", PageLive.Home
-
-    # Custom authentication routes
     live "/login", AuthLive.Login
     live "/register", AuthLive.Register
     get "/set_session", SessionController, :set_session
     get "/logout", SessionController, :logout
-
-    # Blog LiveView routes
     live "/blog", BlogLive.Index
-    live "/blog/new", BlogLive.New
     live "/blog/:id", BlogLive.Show
-    live "/blog/:id/edit", BlogLive.Edit
-    live "/blog/:id/comments/:comment_id/edit", BlogLive.EditComment
-
-    # Shop LiveView routes
     live "/shop", ShopLive.Index
     live "/shop/:id", ShopLive.Show
+  end
+
+  # Protected routes (authentication required)
+  scope "/", BlesterWeb do
+    pipe_through [:browser, BlesterWeb.Plugs.AuthenticateUser]
+
+    live "/blog/new", BlogLive.New
+    live "/blog/:id/edit", BlogLive.Edit
+    live "/blog/:id/comments/:comment_id/edit", BlogLive.EditComment
     live "/cart", ShopLive.Cart
     live "/checkout", ShopLive.Checkout
+  end
 
-    # Admin routes
-    live "/admin/dashboard", AdminLive.Dashboard
-    live "/admin/products", AdminLive.Products
-    live "/admin/products/new", AdminLive.Products.New
-    live "/admin/products/:id/edit", AdminLive.Products.Edit
-    live "/admin/orders", AdminLive.Orders
-    live "/admin/orders/:id", AdminLive.Orders.Show
-    live "/admin/users", AdminLive.Users
+  # Admin routes (admin role required)
+  scope "/admin", BlesterWeb do
+    pipe_through [:browser, BlesterWeb.Plugs.AuthenticateUser, BlesterWeb.Plugs.EnsureAdmin]
+
+    live "/dashboard", AdminLive.Dashboard
+    live "/products", AdminLive.Products
+    live "/products/new", AdminLive.Products.New
+    live "/products/:id/edit", AdminLive.Products.Edit
+    live "/orders", AdminLive.Orders
+    live "/orders/:id", AdminLive.Orders.Show
+    live "/users", AdminLive.Users
   end
 
   # Other scopes may use custom stacks.

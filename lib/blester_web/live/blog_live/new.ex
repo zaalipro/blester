@@ -2,34 +2,20 @@ defmodule BlesterWeb.BlogLive.New do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
   alias Blester.Accounts
+  alias BlesterWeb.LiveView.Authentication
 
   @impl true
   def mount(_params, session, socket) do
-    user_id = session[:user_id]
-
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
-    current_user = case user_id do
-      nil -> nil
-      id -> case Accounts.get_user(id) do
-        {:ok, user} -> user
-        _ -> nil
-      end
-    end
-
-    case user_id do
-      nil ->
-        {:ok, push_navigate(socket, to: "/login")}
-      user_id ->
-        {:ok, assign(socket, post: %{}, errors: %{}, current_user_id: user_id, current_user: current_user, cart_count: cart_count)}
-    end
+    Authentication.mount_authenticated(_params, session, socket, fn _params, socket ->
+      {:ok, assign(socket, post: %{}, errors: %{})}
+    end)
   end
 
   @impl true
   def handle_event("save", %{"post" => post_params}, socket) do
-    case socket.assigns.current_user_id do
-      nil ->
-        {:noreply, push_navigate(socket, to: "/login")}
-      user_id ->
+    case Authentication.require_authentication(socket) do
+      {:ok, socket} ->
+        user_id = socket.assigns.current_user_id
         post_params = Map.put(post_params, "author_id", user_id)
 
         case Accounts.create_post(post_params) do
@@ -39,6 +25,8 @@ defmodule BlesterWeb.BlogLive.New do
             errors = format_errors(changeset.errors)
             {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to create post")}
         end
+      {:error, :redirect} ->
+        {:noreply, push_navigate(socket, to: "/login")}
     end
   end
 
@@ -53,16 +41,7 @@ defmodule BlesterWeb.BlogLive.New do
     {:noreply, clear_flash(socket)}
   end
 
-  defp current_user(socket) do
-    case socket.assigns.current_user_id do
-      nil -> nil
-      user_id -> case Accounts.get_user(user_id) do
-        {:ok, user} -> user
-        _ -> nil
-      end
-    end
-  end
-
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="container mx-auto px-4 py-8">

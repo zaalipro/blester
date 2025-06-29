@@ -5,7 +5,7 @@ defmodule BlesterWeb.AuthLive.Register do
 
   @impl true
   def mount(_params, session, socket) do
-    user_id = session["user_id"]
+    user_id = session[:user_id]
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
     current_user = case user_id do
       nil -> nil
@@ -15,29 +15,44 @@ defmodule BlesterWeb.AuthLive.Register do
       end
     end
 
-    {:ok, assign(socket,
-      user: %{},
-      errors: %{},
-      current_user_id: user_id,
-      current_user: current_user,
-      cart_count: cart_count
-    )}
+    # If user is already logged in, redirect to blog
+    case user_id do
+      nil ->
+        {:ok, assign(socket,
+          user: %{},
+          errors: %{},
+          current_user_id: user_id,
+          current_user: current_user,
+          cart_count: cart_count
+        )}
+      _user_id ->
+        {:ok, push_navigate(socket, to: "/blog")}
+    end
   end
 
   @impl true
   def handle_event("register", %{"user" => user_params}, socket) do
+    # Remove password_confirmation before creating user
+    user_params = Map.delete(user_params, "password_confirmation")
+
     case Accounts.create_user(user_params) do
       {:ok, user} ->
-        {:noreply, add_flash_timer(socket, :info, "Account created successfully! Please log in.") |> redirect(to: "/login")}
-      {:error, changeset} ->
-        errors = format_errors(changeset.errors)
-        {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to create account")}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Account created successfully! Please log in.")
+         |> redirect(to: "/login")}
+      {:error, error} ->
+        errors = format_errors(error)
+        {:noreply,
+         socket
+         |> assign(errors: errors)
+         |> put_flash(:error, "Failed to create account. Please check the form and try again.")}
     end
   end
 
   @impl true
   def handle_event("validate", %{"user" => user_params}, socket) do
-    errors = validate_user(user_params)
+    errors = validate_registration(user_params)
     {:noreply, assign(socket, user: user_params, errors: errors)}
   end
 
@@ -46,6 +61,7 @@ defmodule BlesterWeb.AuthLive.Register do
     {:noreply, clear_flash(socket)}
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -68,6 +84,9 @@ defmodule BlesterWeb.AuthLive.Register do
                 placeholder="Email address"
                 value={@user["email"] || ""}
               />
+              <%= if @errors[:email] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:email] %></p>
+              <% end %>
             </div>
             <div>
               <label for="first_name" class="sr-only">First name</label>
@@ -80,6 +99,9 @@ defmodule BlesterWeb.AuthLive.Register do
                 placeholder="First name"
                 value={@user["first_name"] || ""}
               />
+              <%= if @errors[:first_name] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:first_name] %></p>
+              <% end %>
             </div>
             <div>
               <label for="last_name" class="sr-only">Last name</label>
@@ -92,6 +114,9 @@ defmodule BlesterWeb.AuthLive.Register do
                 placeholder="Last name"
                 value={@user["last_name"] || ""}
               />
+              <%= if @errors[:last_name] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:last_name] %></p>
+              <% end %>
             </div>
             <div>
               <label for="country" class="sr-only">Country</label>
@@ -104,6 +129,9 @@ defmodule BlesterWeb.AuthLive.Register do
                 placeholder="Country"
                 value={@user["country"] || ""}
               />
+              <%= if @errors[:country] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:country] %></p>
+              <% end %>
             </div>
             <div>
               <label for="password" class="sr-only">Password</label>
@@ -116,6 +144,9 @@ defmodule BlesterWeb.AuthLive.Register do
                 placeholder="Password"
                 value={@user["password"] || ""}
               />
+              <%= if @errors[:password] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:password] %></p>
+              <% end %>
             </div>
             <div>
               <label for="password_confirmation" class="sr-only">Confirm password</label>
@@ -128,6 +159,9 @@ defmodule BlesterWeb.AuthLive.Register do
                 placeholder="Confirm password"
                 value={@user["password_confirmation"] || ""}
               />
+              <%= if @errors[:password_confirmation] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:password_confirmation] %></p>
+              <% end %>
             </div>
           </div>
 
@@ -141,9 +175,12 @@ defmodule BlesterWeb.AuthLive.Register do
           </div>
 
           <div class="text-center">
-            <a href="/login" class="text-indigo-600 hover:text-indigo-500">
-              Already have an account? Sign in
-            </a>
+            <p class="text-sm text-gray-600">
+              Already have an account?
+              <a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+                Sign in
+              </a>
+            </p>
           </div>
         </form>
       </div>

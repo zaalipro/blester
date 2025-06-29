@@ -1,5 +1,6 @@
-defmodule BlesterWeb.Plugs.SetCurrentUser do
+defmodule BlesterWeb.Plugs.AuthenticateUser do
   import Plug.Conn
+  import Phoenix.Controller
   alias Blester.Accounts
 
   def init(opts), do: opts
@@ -10,8 +11,9 @@ defmodule BlesterWeb.Plugs.SetCurrentUser do
     case user_id do
       nil ->
         conn
-        |> assign(:current_user, nil)
-        |> assign(:current_user_id, nil)
+        |> put_flash(:error, "You must be logged in to access this page.")
+        |> redirect(to: "/login")
+        |> halt()
       user_id ->
         case Accounts.get_user(user_id) do
           {:ok, user} when not is_nil(user) ->
@@ -19,11 +21,11 @@ defmodule BlesterWeb.Plugs.SetCurrentUser do
             |> assign(:current_user, user)
             |> assign(:current_user_id, user.id)
           _ ->
-            # User not found, clear session
             conn
             |> clear_session()
-            |> assign(:current_user, nil)
-            |> assign(:current_user_id, nil)
+            |> put_flash(:error, "Your session has expired. Please log in again.")
+            |> redirect(to: "/login")
+            |> halt()
         end
     end
   end

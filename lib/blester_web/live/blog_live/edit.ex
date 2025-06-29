@@ -2,46 +2,32 @@ defmodule BlesterWeb.BlogLive.Edit do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
   alias Blester.Accounts
+  alias BlesterWeb.LiveView.Authentication
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
-    user_id = session[:user_id]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
-    current_user = case user_id do
-      nil -> nil
-      id -> case Accounts.get_user(id) do
-        {:ok, user} -> user
-        _ -> nil
-      end
-    end
-
-    case user_id do
-      nil ->
-        {:ok, push_navigate(socket, to: "/login")}
-      user_id ->
-        case Accounts.get_post(id) do
-          {:ok, post} ->
-            if post.author_id == user_id do
-              post_map = %{
-                "title" => post.title,
-                "content" => post.content
-              }
-              {:ok, assign(socket, post: post_map, post_id: id, errors: %{}, current_user_id: user_id, current_user: current_user, cart_count: cart_count)}
-            else
-              {:ok, push_navigate(socket, to: "/blog")}
-            end
-          {:error, _} ->
+    Authentication.mount_authenticated(%{"id" => id}, session, socket, fn %{"id" => id}, socket ->
+      case Accounts.get_post(id) do
+        {:ok, post} ->
+          if post.author_id == socket.assigns.current_user_id do
+            post_map = %{
+              "title" => post.title,
+              "content" => post.content
+            }
+            {:ok, assign(socket, post: post_map, post_id: id, errors: %{})}
+          else
             {:ok, push_navigate(socket, to: "/blog")}
-        end
-    end
+          end
+        {:error, _} ->
+          {:ok, push_navigate(socket, to: "/blog")}
+      end
+    end)
   end
 
   @impl true
   def handle_event("save", %{"post" => post_params}, socket) do
-    case socket.assigns.current_user_id do
-      nil ->
-        {:noreply, push_navigate(socket, to: "/login")}
-      user_id ->
+    case Authentication.require_authentication(socket) do
+      {:ok, socket} ->
         case Accounts.update_post(socket.assigns.post_id, post_params) do
           {:ok, post} ->
             {:noreply, add_flash_timer(socket, :info, "Post updated successfully") |> push_navigate(to: "/blog/#{post.id}")}
@@ -49,6 +35,8 @@ defmodule BlesterWeb.BlogLive.Edit do
             errors = format_errors(changeset.errors)
             {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to update post")}
         end
+      {:error, :redirect} ->
+        {:noreply, push_navigate(socket, to: "/login")}
     end
   end
 
@@ -63,23 +51,14 @@ defmodule BlesterWeb.BlogLive.Edit do
     {:noreply, clear_flash(socket)}
   end
 
-  defp current_user(socket) do
-    case socket.assigns.current_user_id do
-      nil -> nil
-      user_id -> case Accounts.get_user(user_id) do
-        {:ok, user} -> user
-        _ -> nil
-      end
-    end
-  end
-
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="container mx-auto px-4 py-8">
       <div class="max-w-4xl mx-auto">
         <div class="mb-8">
-          <a href={"/blog/#{@post_id}"} class="text-blue-600 hover:text-blue-800">
-            ← Back to Post
+          <a href="/blog" class="text-blue-600 hover:text-blue-800">
+            ← Back to Blog
           </a>
         </div>
 
@@ -124,7 +103,7 @@ defmodule BlesterWeb.BlogLive.Edit do
             </div>
 
             <div class="flex justify-end space-x-4">
-              <a href={"/blog/#{@post_id}"} class="btn btn-secondary">
+              <a href="/blog" class="btn btn-secondary">
                 Cancel
               </a>
               <button type="submit" class="btn btn-primary">

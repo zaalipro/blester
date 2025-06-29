@@ -16,6 +16,26 @@ defmodule BlesterWeb.LiveValidations do
   end
 
   @doc """
+  Validates registration parameters.
+  """
+  def validate_registration(user_params) do
+    errors = %{}
+    errors = if user_params["email"] == "" or is_nil(user_params["email"]), do: Map.put(errors, :email, "Email is required"), else: errors
+    errors = if user_params["first_name"] == "" or is_nil(user_params["first_name"]), do: Map.put(errors, :first_name, "First name is required"), else: errors
+    errors = if user_params["last_name"] == "" or is_nil(user_params["last_name"]), do: Map.put(errors, :last_name, "Last name is required"), else: errors
+    errors = if user_params["country"] == "" or is_nil(user_params["country"]), do: Map.put(errors, :country, "Country is required"), else: errors
+    errors = if user_params["password"] == "" or is_nil(user_params["password"]), do: Map.put(errors, :password, "Password is required"), else: errors
+    errors = if user_params["password_confirmation"] == "" or is_nil(user_params["password_confirmation"]), do: Map.put(errors, :password_confirmation, "Password confirmation is required"), else: errors
+
+    # Check if passwords match
+    if user_params["password"] != user_params["password_confirmation"] and user_params["password"] != "" and user_params["password_confirmation"] != "" do
+      Map.put(errors, :password_confirmation, "Passwords do not match")
+    else
+      errors
+    end
+  end
+
+  @doc """
   Validates post parameters.
   """
   def validate_post(post_params) do
@@ -37,20 +57,31 @@ defmodule BlesterWeb.LiveValidations do
   @doc """
   Formats Ash changeset errors to a simple map.
   """
-  def format_errors(errors) do
-    case errors do
-      %Ash.Error.Invalid{} = ash_error ->
-        ash_error.errors
-        |> Enum.map(fn %Ash.Error.Changes.Required{field: field} ->
-          {field, "is required"}
-        end)
-        |> Enum.into(%{})
+  def format_errors(errors) when is_list(errors) do
+    errors
+    |> Enum.map(fn {field, {message, _}} -> {field, message} end)
+    |> Enum.into(%{})
+  end
+
+  def format_errors(%Ash.Error.Invalid{} = ash_error) do
+    ash_error.errors
+    |> Enum.map(fn
+      %Ash.Error.Changes.Required{field: field} ->
+        {field, "is required"}
+      %Ash.Error.Changes.InvalidAttribute{field: field, message: message} ->
+        {field, message}
+      %Ash.Error.Invalid.NoSuchInput{input: input} ->
+        {input, "is not a valid field"}
+      %Ash.Error.Changes.InvalidChanges{message: message} ->
+        {:base, message}
       _ ->
-        # Handle other error formats
-        errors
-        |> Enum.map(fn {field, {message, _}} -> {field, message} end)
-        |> Enum.into(%{})
-    end
+        {:base, "Invalid data"}
+    end)
+    |> Enum.into(%{})
+  end
+
+  def format_errors(_) do
+    %{:base => "An unexpected error occurred"}
   end
 
   @doc """

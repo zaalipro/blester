@@ -15,13 +15,19 @@ defmodule BlesterWeb.AuthLive.Login do
       end
     end
 
-    {:ok, assign(socket,
-      user: %{},
-      errors: %{},
-      current_user_id: user_id,
-      current_user: current_user,
-      cart_count: cart_count
-    )}
+    # If user is already logged in, redirect to blog
+    case user_id do
+      nil ->
+        {:ok, assign(socket,
+          user: %{},
+          errors: %{},
+          current_user_id: user_id,
+          current_user: current_user,
+          cart_count: cart_count
+        )}
+      _user_id ->
+        {:ok, push_navigate(socket, to: "/blog")}
+    end
   end
 
   @impl true
@@ -30,10 +36,13 @@ defmodule BlesterWeb.AuthLive.Login do
       {:ok, user} ->
         {:noreply,
          socket
-         |> add_flash_timer(:info, "Logged in successfully")
+         |> put_flash(:info, "Logged in successfully! Welcome back, #{user.first_name}.")
          |> redirect(to: "/set_session?user_id=#{user.id}")}
       {:error, _} ->
-        {:noreply, assign(socket, errors: %{email: "Invalid email or password"}) |> add_flash_timer(:error, "Invalid email or password")}
+        {:noreply,
+         socket
+         |> assign(errors: %{email: "Invalid email or password"})
+         |> put_flash(:error, "Invalid email or password. Please try again.")}
     end
   end
 
@@ -48,6 +57,7 @@ defmodule BlesterWeb.AuthLive.Login do
     {:noreply, clear_flash(socket)}
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -70,6 +80,9 @@ defmodule BlesterWeb.AuthLive.Login do
                 placeholder="Email address"
                 value={@user["email"] || ""}
               />
+              <%= if @errors[:email] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:email] %></p>
+              <% end %>
             </div>
             <div>
               <label for="password" class="sr-only">Password</label>
@@ -82,6 +95,9 @@ defmodule BlesterWeb.AuthLive.Login do
                 placeholder="Password"
                 value={@user["password"] || ""}
               />
+              <%= if @errors[:password] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:password] %></p>
+              <% end %>
             </div>
           </div>
 
@@ -95,9 +111,12 @@ defmodule BlesterWeb.AuthLive.Login do
           </div>
 
           <div class="text-center">
-            <a href="/register" class="text-indigo-600 hover:text-indigo-500">
-              Don't have an account? Sign up
-            </a>
+            <p class="text-sm text-gray-600">
+              Don't have an account?
+              <a href="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
+                Sign up
+              </a>
+            </p>
           </div>
         </form>
       </div>
