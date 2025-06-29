@@ -20,55 +20,24 @@ defmodule BlesterWeb.ShopLive.Index do
   end
 
   @impl true
-  def handle_params(%{"page" => page} = params, _url, socket) do
-    page = String.to_integer(page)
-    category = Map.get(params, "category", "")
-    search = Map.get(params, "search", "")
-    {:noreply, assign(socket, page: page, category: category, search: search) |> load_products()}
-  end
-
-  @impl true
-  def handle_params(%{"category" => category} = params, _url, socket) do
-    page = Map.get(params, "page", "1") |> String.to_integer()
-    search = Map.get(params, "search", "")
-    {:noreply, assign(socket, page: page, category: category, search: search) |> load_products()}
-  end
-
-  @impl true
-  def handle_params(%{"search" => search} = params, _url, socket) do
+  def handle_params(params, _url, socket) do
     page = Map.get(params, "page", "1") |> String.to_integer()
     category = Map.get(params, "category", "")
-    {:noreply, assign(socket, page: page, category: category, search: search) |> load_products()}
-  end
+    search = Map.get(params, "search", "")
 
-  @impl true
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket |> assign(page: 1, category: "", search: "") |> load_products()}
+    {:noreply, assign(socket, page: page, category: category, search: search) |> load_products()}
   end
 
   @impl true
   def handle_event("search", %{"search" => search}, socket) do
-    category_param = if socket.assigns.category != "", do: "&category=#{socket.assigns.category}", else: ""
-    search_param = if search != "", do: "search=#{search}", else: ""
-
-    url = case {search_param, category_param} do
-      {"", ""} -> "/shop"
-      {"", _} -> "/shop?#{category_param}"
-      {_, ""} -> "/shop?#{search_param}"
-      {_, _} -> "/shop?#{search_param}#{category_param}"
-    end
-
+    url = build_url(search: search, category: socket.assigns.category)
     {:noreply, push_patch(socket, to: url)}
   end
 
   @impl true
   def handle_event("filter-category", %{"category" => category}, socket) do
-    IO.inspect("Filter category event triggered with: #{category}")
-    if category == "" do
-      {:noreply, push_patch(socket, to: "/shop")}
-    else
-      {:noreply, push_patch(socket, to: "/shop?category=#{category}")}
-    end
+    url = build_url(search: socket.assigns.search, category: category)
+    {:noreply, push_patch(socket, to: url)}
   end
 
   @impl true
@@ -131,11 +100,15 @@ defmodule BlesterWeb.ShopLive.Index do
   end
 
   defp build_pagination_url(page, search, category) do
-    params = []
-    params = if search != "", do: params ++ ["search=#{search}"], else: params
-    params = if category != "", do: params ++ ["category=#{category}"], else: params
-    params = params ++ ["page=#{page}"]
+    build_url(search: search, category: category, page: page)
+  end
 
-    "/shop?#{Enum.join(params, "&")}"
+  defp build_url(opts) do
+    params = []
+    params = if opts[:search] && opts[:search] != "", do: params ++ ["search=#{opts[:search]}"], else: params
+    params = if opts[:category] && opts[:category] != "", do: params ++ ["category=#{opts[:category]}"], else: params
+    params = if opts[:page] && opts[:page] != 1, do: params ++ ["page=#{opts[:page]}"], else: params
+
+    if params == [], do: "/shop", else: "/shop?#{Enum.join(params, "&")}"
   end
 end

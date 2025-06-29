@@ -107,12 +107,5 @@ products_data = [
 
 # Create products
 Enum.each(products_data, fn product_data ->
-  case Accounts.create_product(product_data) do
-    {:ok, product} ->
-      IO.puts("Created product: #{product.name}")
-    {:error, changeset} ->
-      IO.puts("Failed to create product #{product_data.name}: #{inspect(changeset.errors)}")
-  end
+  Accounts.create_product(product_data)
 end)
-
-IO.puts("Seed data completed!")
