@@ -20,12 +20,12 @@ defmodule BlesterWeb.BlogLive.Index do
   @impl true
   def handle_params(%{"page" => page}, _url, socket) do
     page = String.to_integer(page)
-    load_posts(socket, page)
+    {:noreply, load_posts(socket, page)}
   end
 
   @impl true
   def handle_params(_params, _url, socket) do
-    load_posts(socket, 1)
+    {:noreply, load_posts(socket, 1)}
   end
 
   @impl true
