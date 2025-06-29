@@ -1,5 +1,6 @@
 defmodule BlesterWeb.ShopLive.Index do
   use BlesterWeb, :live_view
+  import BlesterWeb.LiveValidations
   alias Blester.Accounts
 
   @impl true
@@ -51,13 +52,10 @@ defmodule BlesterWeb.ShopLive.Index do
       user_id ->
         case Accounts.add_to_cart(user_id, product_id) do
           {:ok, _cart_item} ->
-            # Get updated cart count
             cart_count = Accounts.get_cart_count(user_id)
-            {:noreply, socket
-              |> assign(cart_count: cart_count)
-              |> put_flash(:info, "Product added to cart!")}
+            {:noreply, assign(socket, cart_count: cart_count) |> add_flash_timer(:info, "Product added to cart!")}
           {:error, _changeset} ->
-            {:noreply, socket |> put_flash(:error, "Failed to add product to cart")}
+            {:noreply, add_flash_timer(socket, :error, "Failed to add product to cart")}
         end
     end
   end
@@ -75,6 +73,11 @@ defmodule BlesterWeb.ShopLive.Index do
   @impl true
   def handle_event("close-quick-view", _params, socket) do
     {:noreply, assign(socket, quick_view_product: nil)}
+  end
+
+  @impl true
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
   end
 
   defp load_products(socket) do
@@ -117,9 +120,5 @@ defmodule BlesterWeb.ShopLive.Index do
     params = if opts[:page] && opts[:page] != 1, do: params ++ ["page=#{opts[:page]}"], else: params
 
     if params == [], do: "/shop", else: "/shop?#{Enum.join(params, "&")}"
-  end
-
-  defp get_cart_count(user_id) do
-    Accounts.get_cart_count(user_id)
   end
 end

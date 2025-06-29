@@ -1,37 +1,32 @@
 defmodule BlesterWeb.AuthLive.Login do
   use BlesterWeb, :live_view
+  import BlesterWeb.LiveValidations
+  alias Blester.Accounts
 
   @impl true
-  def mount(_params, session, socket) do
-    user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
-    case user_id do
-      nil ->
-        {:ok, assign(socket, form: %{}, errors: %{}, cart_count: cart_count)}
-      user_id ->
-        {:ok, push_navigate(socket, to: "/")}
-    end
+  def mount(_params, _session, socket) do
+    {:ok, assign(socket, user: %{}, errors: %{})}
   end
 
-  def handle_event("validate", %{"email" => email, "password" => password}, socket) do
-    form = to_form(%{"email" => email, "password" => password})
-    {:noreply, assign(socket, form: form)}
-  end
-
-  def handle_event("login", %{"email" => email, "password" => password}, socket) do
-    case Blester.Accounts.authenticate_user(email, password) do
+  @impl true
+  def handle_event("login", %{"user" => user_params}, socket) do
+    case Accounts.authenticate_user(user_params["email"], user_params["password"]) do
       {:ok, user} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Welcome back!")
-         |> redirect(to: "/set_session?user_id=#{user.id}")}
-
-      {:error, :invalid_credentials} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Invalid email or password")
-         |> assign(form: to_form(%{"email" => email, "password" => ""}))}
+        {:noreply, add_flash_timer(socket, :info, "Logged in successfully") |> redirect(to: "/")}
+      {:error, _} ->
+        {:noreply, assign(socket, errors: %{email: "Invalid email or password"}) |> add_flash_timer(:error, "Invalid email or password")}
     end
+  end
+
+  @impl true
+  def handle_event("validate", %{"user" => user_params}, socket) do
+    errors = validate_user(user_params)
+    {:noreply, assign(socket, errors: errors)}
+  end
+
+  @impl true
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
   end
 
   def render(assigns) do
@@ -54,7 +49,7 @@ defmodule BlesterWeb.AuthLive.Login do
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
-                value={@form["email"].value}
+                value={@user["email"].value}
               />
             </div>
             <div>
@@ -66,7 +61,7 @@ defmodule BlesterWeb.AuthLive.Login do
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
-                value={@form["password"].value}
+                value={@user["password"].value}
               />
             </div>
           </div>

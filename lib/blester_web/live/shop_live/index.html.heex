@@ -56,17 +56,17 @@
 
         <!-- Category Filter -->
         <div>
-          <select 
-            id="category-filter"
-            phx-hook="CategoryFilter" 
-            name="category" 
-            class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="" selected={@category == ""}>All Categories</option>
-            <%= for category <- @categories do %>
-              <option value={category} selected={@category == category}><%= category %></option>
-            <% end %>
-          </select>
+          <form phx-change="filter-category" class="flex">
+            <select 
+              name="category" 
+              class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="" selected={@category == ""}>All Categories</option>
+              <%= for category <- @categories do %>
+                <option value={category} selected={@category == category}><%= category %></option>
+              <% end %>
+            </select>
+          </form>
         </div>
 
         <!-- Results Count -->

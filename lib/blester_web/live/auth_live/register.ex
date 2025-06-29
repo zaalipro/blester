@@ -1,50 +1,33 @@
 defmodule BlesterWeb.AuthLive.Register do
   use BlesterWeb, :live_view
+  import BlesterWeb.LiveValidations
+  alias Blester.Accounts
 
   @impl true
-  def mount(_params, session, socket) do
-    user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
-    case user_id do
-      nil ->
-        {:ok, assign(socket, form: %{}, errors: %{}, cart_count: cart_count)}
-      user_id ->
-        {:ok, push_navigate(socket, to: "/")}
+  def mount(_params, _session, socket) do
+    {:ok, assign(socket, user: %{}, errors: %{})}
+  end
+
+  @impl true
+  def handle_event("register", %{"user" => user_params}, socket) do
+    case Accounts.create_user(user_params) do
+      {:ok, user} ->
+        {:noreply, add_flash_timer(socket, :info, "Account created successfully! Please log in.") |> redirect(to: "/login")}
+      {:error, changeset} ->
+        errors = format_errors(changeset.errors)
+        {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to create account")}
     end
   end
 
-  def handle_event("validate", params, socket) do
-    form = to_form(params)
-    {:noreply, assign(socket, form: form)}
+  @impl true
+  def handle_event("validate", %{"user" => user_params}, socket) do
+    errors = validate_user(user_params)
+    {:noreply, assign(socket, errors: errors)}
   end
 
-  def handle_event("register", %{"email" => email, "password" => password, "password_confirmation" => password_confirmation, "first_name" => first_name, "last_name" => last_name, "country" => country}, socket) do
-    if password != password_confirmation do
-      {:noreply,
-       socket
-       |> put_flash(:error, "Passwords do not match")
-       |> assign(form: to_form(%{"email" => email, "password" => "", "password_confirmation" => "", "first_name" => first_name, "last_name" => last_name, "country" => country}))}
-    else
-      case Blester.Accounts.create_user(%{
-        email: email,
-        password: password,
-        first_name: first_name,
-        last_name: last_name,
-        country: country
-      }) do
-        {:ok, user} ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Account created successfully!")
-           |> redirect(to: "/set_session?user_id=#{user.id}")}
-
-        {:error, _changeset} ->
-          {:noreply,
-           socket
-           |> put_flash(:error, "Registration failed")
-           |> assign(form: to_form(%{"email" => email, "password" => "", "password_confirmation" => "", "first_name" => first_name, "last_name" => last_name, "country" => country}))}
-      end
-    end
+  @impl true
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
   end
 
   def render(assigns) do
@@ -67,7 +50,7 @@ defmodule BlesterWeb.AuthLive.Register do
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
-                value={@form["email"].value}
+                value={@user["email"].value}
               />
             </div>
             <div>
@@ -79,7 +62,7 @@ defmodule BlesterWeb.AuthLive.Register do
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="First name"
-                value={@form["first_name"].value}
+                value={@user["first_name"].value}
               />
             </div>
             <div>
@@ -91,7 +74,7 @@ defmodule BlesterWeb.AuthLive.Register do
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Last name"
-                value={@form["last_name"].value}
+                value={@user["last_name"].value}
               />
             </div>
             <div>
@@ -103,7 +86,7 @@ defmodule BlesterWeb.AuthLive.Register do
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Country"
-                value={@form["country"].value}
+                value={@user["country"].value}
               />
             </div>
             <div>
@@ -115,7 +98,7 @@ defmodule BlesterWeb.AuthLive.Register do
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
-                value={@form["password"].value}
+                value={@user["password"].value}
               />
             </div>
             <div>
@@ -127,7 +110,7 @@ defmodule BlesterWeb.AuthLive.Register do
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm password"
-                value={@form["password_confirmation"].value}
+                value={@user["password_confirmation"].value}
               />
             </div>
           </div>

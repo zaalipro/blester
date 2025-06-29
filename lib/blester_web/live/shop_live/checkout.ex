@@ -1,51 +1,47 @@
 defmodule BlesterWeb.ShopLive.Checkout do
   use BlesterWeb, :live_view
+  import BlesterWeb.LiveValidations
   alias Blester.Accounts
 
   @impl true
   def mount(_params, session, socket) do
     user_id = session["user_id"]
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
     case user_id do
       nil ->
         {:ok, push_navigate(socket, to: "/login")}
       user_id ->
-        cart_items = Accounts.get_user_cart(user_id)
-        cart_count = Accounts.get_cart_count(user_id)
-        if length(cart_items) == 0 do
-          {:ok, push_navigate(socket, to: "/cart")}
-        else
-          total = calculate_total(cart_items)
-          {:ok, assign(socket,
-            cart_items: cart_items,
-            total: total,
-            current_user_id: user_id,
-            cart_count: cart_count,
-            order_params: %{}
-          )}
+        case Accounts.get_cart_items(user_id) do
+          {:ok, cart_items} ->
+            if length(cart_items) > 0 do
+              {:ok, assign(socket, cart_items: cart_items, current_user_id: user_id, cart_count: cart_count)}
+            else
+              {:ok, push_navigate(socket, to: "/shop/cart")}
+            end
+          {:error, _} ->
+            {:ok, push_navigate(socket, to: "/shop/cart")}
         end
     end
   end
 
   @impl true
-  def handle_event("place-order", params, socket) do
-    user_id = socket.assigns.current_user_id
-    cart_items = socket.assigns.cart_items
-    total = socket.assigns.total
-    order_params = %{
-      user_id: user_id,
-      order_number: Accounts.generate_order_number(),
-      status: "pending",
-      total_amount: total,
-      shipping_address: params["shipping_address"],
-      billing_address: params["billing_address"],
-      payment_method: params["payment_method"]
-    }
-    case Accounts.place_order(order_params, cart_items) do
+  def handle_event("place-order", _params, socket) do
+    case Accounts.create_order_from_cart(socket.assigns.current_user_id) do
       {:ok, order} ->
-        {:noreply, assign(socket, step: :success, order: order)}
-      {:error, changeset} ->
-        {:noreply, assign(socket, error: "Failed to place order: #{inspect(changeset.errors)}")}
+        cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
+        {:noreply, assign(socket, cart_count: cart_count) |> add_flash_timer(:info, "Order placed successfully!") |> push_navigate(to: "/shop")}
+      {:error, _} ->
+        {:noreply, add_flash_timer(socket, :error, "Failed to place order")}
     end
+  end
+
+  @impl true
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
+  end
+
+  def render(assigns) do
+    # ... existing code ...
   end
 
   defp calculate_total(cart_items) do

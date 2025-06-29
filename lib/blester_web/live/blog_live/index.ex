@@ -1,6 +1,6 @@
 defmodule BlesterWeb.BlogLive.Index do
   use BlesterWeb, :live_view
-
+  import BlesterWeb.LiveValidations
   alias Blester.Accounts
 
   @impl true
@@ -30,58 +30,34 @@ defmodule BlesterWeb.BlogLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    post = Enum.find(socket.assigns.posts, &(&1.id == id))
-    user = current_user(socket)
-
-    if post && user && post.author_id == user.id do
-      case Accounts.delete_post(id) do
-        :ok ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Post deleted successfully.")
-           |> push_navigate(to: "/blog")}
-        {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Failed to delete post.")}
-      end
-    else
-      {:noreply, put_flash(socket, :error, "Not authorized to delete this post.")}
+    case Accounts.delete_post(id) do
+      {:ok, _} ->
+        posts = Enum.reject(socket.assigns.posts, fn post -> post.id == id end)
+        {:noreply, assign(socket, posts: posts) |> add_flash_timer(:info, "Post deleted successfully")}
+      {:error, _} ->
+        {:noreply, add_flash_timer(socket, :error, "Failed to delete post")}
     end
   end
 
-  defp load_posts(socket, page) do
-    per_page = socket.assigns.per_page
-    offset = (page - 1) * per_page
+  @impl true
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
+  end
 
-    case Accounts.list_posts_paginated(per_page, offset) do
+  defp load_posts(socket, page) do
+    offset = (page - 1) * 10
+    case Accounts.list_posts_paginated(10, offset) do
       {:ok, {posts, total_count}} ->
-        total_pages = ceil(total_count / per_page)
-        {:noreply,
-         assign(socket,
-           posts: posts,
-           current_page: page,
-           total_pages: total_pages,
-           total_count: total_count
-         )}
+        assign(socket, posts: posts, total_count: total_count, current_page: page)
       {:error, _} ->
-        {:noreply,
-         assign(socket,
-           posts: [],
-           current_page: 1,
-           total_pages: 1,
-           total_count: 0
-         )}
+        assign(socket, posts: [], total_count: 0, current_page: page)
     end
   end
 
   defp current_user(socket) do
-    user_id = socket.assigns[:current_user_id]
-    case user_id do
+    case socket.assigns.current_user_id do
       nil -> nil
-      id ->
-        case Accounts.get_user(id) do
-          {:ok, user} -> user
-          _ -> nil
-        end
+      user_id -> Accounts.get_user(user_id) |> elem(1)
     end
   end
 end

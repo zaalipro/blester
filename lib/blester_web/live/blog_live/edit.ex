@@ -1,19 +1,7 @@
 defmodule BlesterWeb.BlogLive.Edit do
   use BlesterWeb, :live_view
-
+  import BlesterWeb.LiveValidations
   alias Blester.Accounts
-
-  defp current_user(socket) do
-    user_id = socket.assigns[:current_user_id]
-    case user_id do
-      nil -> nil
-      id ->
-        case Accounts.get_user(id) do
-          {:ok, user} -> user
-          _ -> nil
-        end
-    end
-  end
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
@@ -41,67 +29,101 @@ defmodule BlesterWeb.BlogLive.Edit do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _url, socket) do
-    case Accounts.get_post(id) do
-      {:ok, post} ->
-        user = current_user(socket)
-        if user && post.author_id == user.id do
-          {:noreply,
-           assign(socket,
-             post: post,
-             page_title: "Edit: #{post.title}",
-             errors: %{}
-           )}
-        else
-          {:noreply,
-           socket
-           |> put_flash(:error, "Not authorized to edit this post.")
-           |> push_navigate(to: "/blog/#{post.id}")}
-        end
-      {:error, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Post not found.")
-         |> push_navigate(to: "/blog")}
-    end
-  end
-
-  @impl true
   def handle_event("save", %{"post" => post_params}, socket) do
-    post = socket.assigns.post
-
-    # Convert string keys to atom keys for Ash
-    attrs = %{
-      title: post_params["title"],
-      content: post_params["content"]
-    }
-
-    case Accounts.update_post(post.id, attrs) do
-      {:ok, updated_post} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Post updated successfully.")
-         |> push_navigate(to: "/blog/#{updated_post.id}")}
-
-      {:error, changeset} ->
-        {:noreply,
-         assign(socket,
-           post: Map.merge(post, post_params),
-           errors: format_errors(changeset)
-         )}
+    case socket.assigns.current_user_id do
+      nil ->
+        {:noreply, push_navigate(socket, to: "/login")}
+      user_id ->
+        case Accounts.update_post(socket.assigns.post_id, post_params) do
+          {:ok, post} ->
+            {:noreply, add_flash_timer(socket, :info, "Post updated successfully") |> push_navigate(to: "/blog/#{post.id}")}
+          {:error, changeset} ->
+            errors = format_errors(changeset.errors)
+            {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to update post")}
+        end
     end
   end
 
   @impl true
   def handle_event("validate", %{"post" => post_params}, socket) do
-    {:noreply, assign(socket, post: Map.merge(socket.assigns.post, post_params))}
+    errors = validate_post(post_params)
+    {:noreply, assign(socket, errors: errors)}
   end
 
-  defp format_errors(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
-      end)
-    end)
+  @impl true
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
+  end
+
+  defp current_user(socket) do
+    case socket.assigns.current_user_id do
+      nil -> nil
+      user_id -> Accounts.get_user(user_id) |> elem(1)
+    end
+  end
+
+  def render(assigns) do
+    ~H"""
+    <div class="container mx-auto px-4 py-8">
+      <div class="max-w-4xl mx-auto">
+        <div class="mb-8">
+          <a href={"/blog/#{@post_id}"} class="text-blue-600 hover:text-blue-800">
+            ← Back to Post
+          </a>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-8">
+          <h1 class="text-3xl font-bold text-gray-900 mb-6">Edit Post</h1>
+
+          <form phx-change="validate" phx-submit="save" class="space-y-6">
+            <div>
+              <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+                Title
+              </label>
+              <input
+                type="text"
+                name="post[title]"
+                id="title"
+                value={@post["title"]}
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter post title..."
+                required
+              />
+              <%= if @errors[:title] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:title] %></p>
+              <% end %>
+            </div>
+
+            <div>
+              <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
+                Content
+              </label>
+              <textarea
+                name="post[content]"
+                id="content"
+                rows="12"
+                value={@post["content"]}
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Write your post content here..."
+                required
+              ></textarea>
+              <%= if @errors[:content] do %>
+                <p class="mt-1 text-sm text-red-600"><%= @errors[:content] %></p>
+              <% end %>
+            </div>
+
+            <div class="flex justify-end space-x-4">
+              <a href={"/blog/#{@post_id}"} class="btn btn-secondary">
+                Cancel
+              </a>
+              <button type="submit" class="btn btn-primary">
+                Update Post
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    """
   end
 end
