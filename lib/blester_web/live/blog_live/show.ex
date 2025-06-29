@@ -5,12 +5,19 @@ defmodule BlesterWeb.BlogLive.Show do
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
-    user_id = session["user_id"]
+    user_id = session[:user_id]
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    current_user = case user_id do
+      nil -> nil
+      id -> case Accounts.get_user(id) do
+        {:ok, user} -> user
+        _ -> nil
+      end
+    end
 
     case Accounts.get_post(id) do
       {:ok, post} ->
-        {:ok, assign(socket, post: post, comment_content: "", errors: %{}, current_user_id: user_id, cart_count: cart_count)}
+        {:ok, assign(socket, post: post, comment_content: "", errors: %{}, current_user_id: user_id, current_user: current_user, cart_count: cart_count)}
       {:error, _} ->
         {:ok, push_navigate(socket, to: "/blog")}
     end
@@ -122,7 +129,10 @@ defmodule BlesterWeb.BlogLive.Show do
   defp current_user(socket) do
     case socket.assigns.current_user_id do
       nil -> nil
-      user_id -> Accounts.get_user(user_id) |> elem(1)
+      user_id -> case Accounts.get_user(user_id) do
+        {:ok, user} -> user
+        _ -> nil
+      end
     end
   end
 end

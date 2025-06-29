@@ -17,6 +17,7 @@ defmodule Blester.Accounts.User do
     attribute :first_name, :string, allow_nil?: false
     attribute :last_name, :string, allow_nil?: false
     attribute :country, :string, allow_nil?: false
+    attribute :role, :string, allow_nil?: false, default: "user"
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -39,7 +40,7 @@ defmodule Blester.Accounts.User do
 
   actions do
     create :create do
-      accept [:email, :hashed_password, :first_name, :last_name, :country]
+      accept [:email, :hashed_password, :first_name, :last_name, :country, :role]
     end
     defaults [:read]
   end

@@ -1,11 +1,19 @@
 defmodule BlesterWeb.PageLive.Home do
   use BlesterWeb, :live_view
+  alias Blester.Accounts
 
   @impl true
   def mount(_params, session, socket) do
-    user_id = session["user_id"]
+    user_id = session[:user_id]
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
-    {:ok, assign(socket, current_user_id: user_id, cart_count: cart_count, page_title: "Blester")}
+    current_user = case user_id do
+      nil -> nil
+      id -> case Accounts.get_user(id) do
+        {:ok, user} -> user
+        _ -> nil
+      end
+    end
+    {:ok, assign(socket, current_user_id: user_id, current_user: current_user, cart_count: cart_count, page_title: "Blester")}
   end
 
   @impl true

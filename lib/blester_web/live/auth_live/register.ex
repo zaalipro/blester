@@ -4,8 +4,24 @@ defmodule BlesterWeb.AuthLive.Register do
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, user: %{}, errors: %{})}
+  def mount(_params, session, socket) do
+    user_id = session["user_id"]
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    current_user = case user_id do
+      nil -> nil
+      id -> case Accounts.get_user(id) do
+        {:ok, user} -> user
+        _ -> nil
+      end
+    end
+
+    {:ok, assign(socket,
+      user: %{},
+      errors: %{},
+      current_user_id: user_id,
+      current_user: current_user,
+      cart_count: cart_count
+    )}
   end
 
   @impl true
@@ -22,7 +38,7 @@ defmodule BlesterWeb.AuthLive.Register do
   @impl true
   def handle_event("validate", %{"user" => user_params}, socket) do
     errors = validate_user(user_params)
-    {:noreply, assign(socket, errors: errors)}
+    {:noreply, assign(socket, user: user_params, errors: errors)}
   end
 
   @impl true
@@ -45,72 +61,72 @@ defmodule BlesterWeb.AuthLive.Register do
               <label for="email" class="sr-only">Email address</label>
               <input
                 id="email"
-                name="email"
+                name="user[email]"
                 type="email"
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
-                value={@user["email"].value}
+                value={@user["email"] || ""}
               />
             </div>
             <div>
               <label for="first_name" class="sr-only">First name</label>
               <input
                 id="first_name"
-                name="first_name"
+                name="user[first_name]"
                 type="text"
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="First name"
-                value={@user["first_name"].value}
+                value={@user["first_name"] || ""}
               />
             </div>
             <div>
               <label for="last_name" class="sr-only">Last name</label>
               <input
                 id="last_name"
-                name="last_name"
+                name="user[last_name]"
                 type="text"
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Last name"
-                value={@user["last_name"].value}
+                value={@user["last_name"] || ""}
               />
             </div>
             <div>
               <label for="country" class="sr-only">Country</label>
               <input
                 id="country"
-                name="country"
+                name="user[country]"
                 type="text"
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Country"
-                value={@user["country"].value}
+                value={@user["country"] || ""}
               />
             </div>
             <div>
               <label for="password" class="sr-only">Password</label>
               <input
                 id="password"
-                name="password"
+                name="user[password]"
                 type="password"
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
-                value={@user["password"].value}
+                value={@user["password"] || ""}
               />
             </div>
             <div>
               <label for="password_confirmation" class="sr-only">Confirm password</label>
               <input
                 id="password_confirmation"
-                name="password_confirmation"
+                name="user[password_confirmation]"
                 type="password"
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm password"
-                value={@user["password_confirmation"].value}
+                value={@user["password_confirmation"] || ""}
               />
             </div>
           </div>

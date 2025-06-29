@@ -38,6 +38,15 @@ defmodule BlesterWeb.Router do
     live "/shop/:id", ShopLive.Show
     live "/cart", ShopLive.Cart
     live "/checkout", ShopLive.Checkout
+
+    # Admin routes
+    live "/admin/dashboard", AdminLive.Dashboard
+    live "/admin/products", AdminLive.Products
+    live "/admin/products/new", AdminLive.Products.New
+    live "/admin/products/:id/edit", AdminLive.Products.Edit
+    live "/admin/orders", AdminLive.Orders
+    live "/admin/orders/:id", AdminLive.Orders.Show
+    live "/admin/users", AdminLive.Users
   end
 
   # Other scopes may use custom stacks.

@@ -22,6 +22,14 @@ defmodule Blester.Accounts do
   end
 
   def create_user(attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
     # Hash the password before creating the user
     attrs = Map.put(attrs, :hashed_password, Bcrypt.hash_pwd_salt(attrs.password))
     attrs = Map.delete(attrs, :password)
@@ -52,6 +60,14 @@ defmodule Blester.Accounts do
 
   # Blog functions
   def create_post(attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
     Blester.Accounts.Post
     |> Ash.Changeset.for_create(:create, attrs)
     |> Ash.create()
@@ -98,6 +114,14 @@ defmodule Blester.Accounts do
   end
 
   def update_post(id, attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
     Blester.Accounts.Post
     |> Ash.Query.filter(id: id)
     |> Ash.read_one()
@@ -124,6 +148,14 @@ defmodule Blester.Accounts do
   end
 
   def create_comment(attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
     Blester.Accounts.Comment
     |> Ash.Changeset.for_create(:create, attrs)
     |> Ash.create()
@@ -145,6 +177,14 @@ defmodule Blester.Accounts do
   end
 
   def update_comment(id, attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
     Blester.Accounts.Comment
     |> Ash.Query.filter(id: id)
     |> Ash.read_one()
@@ -172,6 +212,14 @@ defmodule Blester.Accounts do
 
   # Shop functions
   def create_product(attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
     Blester.Accounts.Product
     |> Ash.Changeset.for_create(:create, attrs)
     |> Ash.create()
@@ -415,6 +463,221 @@ defmodule Blester.Accounts do
       {:ok, order}
     else
       error -> error
+    end
+  end
+
+  # Admin functions
+  def count_products do
+    Blester.Accounts.Product
+    |> Ash.count()
+  end
+
+  def count_orders do
+    Blester.Accounts.Order
+    |> Ash.count()
+  end
+
+  def count_users do
+    Blester.Accounts.User
+    |> Ash.count()
+  end
+
+  def get_recent_orders(limit) do
+    Blester.Accounts.Order
+    |> Ash.Query.load([:user])
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.Query.limit(limit)
+    |> Ash.read()
+  end
+
+  def update_product(id, attrs) do
+    Blester.Accounts.Product
+    |> Ash.Query.filter(id: id)
+    |> Ash.read_one()
+    |> case do
+      {:ok, product} ->
+        product
+        |> Ash.Changeset.for_update(:update, attrs)
+        |> Ash.update()
+      {:error, _} ->
+        {:error, :product_not_found}
+    end
+  end
+
+  def delete_product(id) do
+    Blester.Accounts.Product
+    |> Ash.Query.filter(id: id)
+    |> Ash.read_one()
+    |> case do
+      {:ok, product} ->
+        Ash.destroy(product)
+      {:error, _} ->
+        {:error, :product_not_found}
+    end
+  end
+
+  def list_products_paginated_admin(limit, offset, search \\ "", category \\ "") do
+    # Build base query
+    base_query = Blester.Accounts.Product
+
+    # Add search filter (case-insensitive)
+    search_query = if search != "" do
+      base_query
+      |> Ash.Query.filter(name: [ilike: "%#{search}%"])
+    else
+      base_query
+    end
+
+    # Add category filter
+    final_query = if category != "" and category != "all" do
+      search_query
+      |> Ash.Query.filter(category: category)
+    else
+      search_query
+    end
+
+    # Get total count
+    total_count =
+      final_query
+      |> Ash.count()
+      |> case do
+        {:ok, count} -> count
+        _ -> 0
+      end
+
+    # Get paginated products
+    products_query = final_query
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.Query.limit(limit)
+    |> Ash.Query.offset(offset)
+
+    case Ash.read(products_query) do
+      {:ok, products} ->
+        {:ok, {products, total_count}}
+      _ ->
+        {:error, :query_failed}
+    end
+  end
+
+  def list_orders_paginated(limit, offset, search \\ "", status \\ "") do
+    # Build base query
+    base_query = Blester.Accounts.Order
+    |> Ash.Query.load([:user])
+
+    # Add search filter
+    search_query = if search != "" do
+      base_query
+      |> Ash.Query.filter(user: [first_name: [ilike: "%#{search}%"]])
+    else
+      base_query
+    end
+
+    # Add status filter
+    final_query = if status != "" and status != "all" do
+      search_query
+      |> Ash.Query.filter(status: status)
+    else
+      search_query
+    end
+
+    # Get total count
+    total_count =
+      final_query
+      |> Ash.count()
+      |> case do
+        {:ok, count} -> count
+        _ -> 0
+      end
+
+    # Get paginated orders
+    orders_query = final_query
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.Query.limit(limit)
+    |> Ash.Query.offset(offset)
+
+    case Ash.read(orders_query) do
+      {:ok, orders} ->
+        {:ok, {orders, total_count}}
+      _ ->
+        {:error, :query_failed}
+    end
+  end
+
+  def get_order_with_items(id) do
+    Blester.Accounts.Order
+    |> Ash.Query.filter(id: id)
+    |> Ash.Query.load([:order_items, :user, order_items: [:product]])
+    |> Ash.read_one()
+  end
+
+  def update_order_status(id, status) do
+    Blester.Accounts.Order
+    |> Ash.Query.filter(id: id)
+    |> Ash.read_one()
+    |> case do
+      {:ok, order} ->
+        order
+        |> Ash.Changeset.for_update(:update, %{status: status})
+        |> Ash.update()
+      {:error, _} ->
+        {:error, :order_not_found}
+    end
+  end
+
+  def list_users_paginated(limit, offset, search \\ "", role \\ "") do
+    # Build base query
+    base_query = Blester.Accounts.User
+
+    # Add search filter
+    search_query = if search != "" do
+      base_query
+      |> Ash.Query.filter([first_name: [ilike: "%#{search}%"], last_name: [ilike: "%#{search}%"], email: [ilike: "%#{search}%"]])
+    else
+      base_query
+    end
+
+    # Add role filter
+    final_query = if role != "" and role != "all" do
+      search_query
+      |> Ash.Query.filter(role: role)
+    else
+      search_query
+    end
+
+    # Get total count
+    total_count =
+      final_query
+      |> Ash.count()
+      |> case do
+        {:ok, count} -> count
+        _ -> 0
+      end
+
+    # Get paginated users
+    users_query = final_query
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.Query.limit(limit)
+    |> Ash.Query.offset(offset)
+
+    case Ash.read(users_query) do
+      {:ok, users} ->
+        {:ok, {users, total_count}}
+      _ ->
+        {:error, :query_failed}
+    end
+  end
+
+  def update_user_role(id, role) do
+    Blester.Accounts.User
+    |> Ash.Query.filter(id: id)
+    |> Ash.read_one()
+    |> case do
+      {:ok, user} ->
+        user
+        |> Ash.Changeset.for_update(:update, %{role: role})
+        |> Ash.update()
+      {:error, _} ->
+        {:error, :user_not_found}
     end
   end
 end

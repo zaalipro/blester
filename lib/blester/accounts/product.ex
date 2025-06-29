@@ -20,6 +20,7 @@ defmodule Blester.Accounts.Product do
     attribute :stock_quantity, :integer, allow_nil?: false, default: 0
     attribute :sku, :string, allow_nil?: false
     attribute :is_active, :boolean, allow_nil?: false, default: true
+    attribute :status, :string, allow_nil?: false, default: "active"
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -40,11 +41,11 @@ defmodule Blester.Accounts.Product do
 
   actions do
     create :create do
-      accept [:name, :description, :price, :image_url, :category, :stock_quantity, :sku, :is_active]
+      accept [:name, :description, :price, :image_url, :category, :stock_quantity, :sku, :is_active, :status]
     end
 
     update :update do
-      accept [:name, :description, :price, :image_url, :category, :stock_quantity, :sku, :is_active]
+      accept [:name, :description, :price, :image_url, :category, :stock_quantity, :sku, :is_active, :status]
     end
 
     defaults [:read, :destroy]

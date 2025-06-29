@@ -5,16 +5,28 @@ defmodule BlesterWeb.BlogLive.Index do
 
   @impl true
   def mount(_params, session, socket) do
-    user_id = session["user_id"]
+    user_id = session[:user_id]
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
-
-    posts =
-      case Accounts.list_posts() do
-        {:ok, posts} -> posts
-        _ -> []
+    current_user = case user_id do
+      nil -> nil
+      id -> case Accounts.get_user(id) do
+        {:ok, user} -> user
+        _ -> nil
       end
+    end
 
-    {:ok, assign(socket, posts: posts, errors: %{}, current_user_id: user_id, cart_count: cart_count, total_pages: 0, total_count: 0, current_page: 1)}
+    # Get posts with pagination
+    page = String.to_integer(Map.get(_params, "page", "1"))
+    per_page = 10
+    offset = (page - 1) * per_page
+
+    case Accounts.list_posts_paginated(per_page, offset) do
+      {:ok, {posts, total_count}} ->
+        total_pages = ceil(total_count / per_page)
+        {:ok, assign(socket, posts: posts, errors: %{}, current_user_id: user_id, current_user: current_user, cart_count: cart_count, total_pages: total_pages, total_count: total_count, current_page: page)}
+      _ ->
+        {:ok, assign(socket, posts: [], errors: %{}, current_user_id: user_id, current_user: current_user, cart_count: cart_count, total_pages: 0, total_count: 0, current_page: page)}
+    end
   end
 
   @impl true
@@ -59,7 +71,10 @@ defmodule BlesterWeb.BlogLive.Index do
   defp current_user(socket) do
     case socket.assigns.current_user_id do
       nil -> nil
-      user_id -> Accounts.get_user(user_id) |> elem(1)
+      user_id -> case Accounts.get_user(user_id) do
+        {:ok, user} -> user
+        _ -> nil
+      end
     end
   end
 end

@@ -38,9 +38,19 @@ defmodule BlesterWeb.LiveValidations do
   Formats Ash changeset errors to a simple map.
   """
   def format_errors(errors) do
-    errors
-    |> Enum.map(fn {field, {message, _}} -> {field, message} end)
-    |> Enum.into(%{})
+    case errors do
+      %Ash.Error.Invalid{} = ash_error ->
+        ash_error.errors
+        |> Enum.map(fn %Ash.Error.Changes.Required{field: field} ->
+          {field, "is required"}
+        end)
+        |> Enum.into(%{})
+      _ ->
+        # Handle other error formats
+        errors
+        |> Enum.map(fn {field, {message, _}} -> {field, message} end)
+        |> Enum.into(%{})
+    end
   end
 
   @doc """

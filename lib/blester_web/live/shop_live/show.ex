@@ -7,10 +7,17 @@ defmodule BlesterWeb.ShopLive.Show do
   def mount(%{"id" => id}, session, socket) do
     user_id = session["user_id"]
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    current_user = case user_id do
+      nil -> nil
+      id -> case Accounts.get_user(id) do
+        {:ok, user} -> user
+        _ -> nil
+      end
+    end
 
     case Accounts.get_product(id) do
       {:ok, product} ->
-        {:ok, assign(socket, product: product, quantity: 1, current_user_id: user_id, cart_count: cart_count)}
+        {:ok, assign(socket, product: product, quantity: 1, current_user_id: user_id, current_user: current_user, cart_count: cart_count)}
       {:error, _} ->
         {:ok, push_navigate(socket, to: "/shop")}
     end

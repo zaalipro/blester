@@ -690,6 +690,9 @@ defmodule BlesterWeb.CoreComponents do
             <a href="/blog" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Blog</a>
             <a href="/shop" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Shop</a>
             <%= if @current_user_id do %>
+              <%= if Map.get(assigns, :current_user) && Map.get(assigns, :current_user).role == "admin" do %>
+                <a href="/admin/dashboard" class="text-purple-600 hover:text-purple-800 font-medium transition-colors">Admin</a>
+              <% end %>
               <a href="/cart" class="text-gray-600 hover:text-gray-900 font-medium transition-colors relative">
                 Cart
                 <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center" id="cart-count"><%= @cart_count %></span>

@@ -7,6 +7,14 @@ defmodule BlesterWeb.ShopLive.Cart do
   def mount(_params, session, socket) do
     user_id = session["user_id"]
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    current_user = case user_id do
+      nil -> nil
+      id -> case Accounts.get_user(id) do
+        {:ok, user} -> user
+        _ -> nil
+      end
+    end
+
     case user_id do
       nil ->
         {:ok, push_navigate(socket, to: "/login")}
@@ -14,9 +22,9 @@ defmodule BlesterWeb.ShopLive.Cart do
         case Accounts.get_cart_items(user_id) do
           {:ok, cart_items} ->
             total = calculate_total(cart_items)
-            {:ok, assign(socket, cart_items: cart_items, total: total, current_user_id: user_id, cart_count: cart_count)}
+            {:ok, assign(socket, cart_items: cart_items, total: total, current_user_id: user_id, current_user: current_user, cart_count: cart_count)}
           {:error, _} ->
-            {:ok, assign(socket, cart_items: [], total: Decimal.new(0), current_user_id: user_id, cart_count: cart_count)}
+            {:ok, assign(socket, cart_items: [], total: Decimal.new(0), current_user_id: user_id, current_user: current_user, cart_count: cart_count)}
         end
     end
   end

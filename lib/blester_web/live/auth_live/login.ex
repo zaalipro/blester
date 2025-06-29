@@ -4,15 +4,34 @@ defmodule BlesterWeb.AuthLive.Login do
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, user: %{}, errors: %{})}
+  def mount(_params, session, socket) do
+    user_id = session[:user_id]
+    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    current_user = case user_id do
+      nil -> nil
+      id -> case Accounts.get_user(id) do
+        {:ok, user} -> user
+        _ -> nil
+      end
+    end
+
+    {:ok, assign(socket,
+      user: %{},
+      errors: %{},
+      current_user_id: user_id,
+      current_user: current_user,
+      cart_count: cart_count
+    )}
   end
 
   @impl true
   def handle_event("login", %{"user" => user_params}, socket) do
     case Accounts.authenticate_user(user_params["email"], user_params["password"]) do
       {:ok, user} ->
-        {:noreply, add_flash_timer(socket, :info, "Logged in successfully") |> redirect(to: "/")}
+        {:noreply,
+         socket
+         |> add_flash_timer(:info, "Logged in successfully")
+         |> redirect(to: "/set_session?user_id=#{user.id}")}
       {:error, _} ->
         {:noreply, assign(socket, errors: %{email: "Invalid email or password"}) |> add_flash_timer(:error, "Invalid email or password")}
     end
@@ -21,7 +40,7 @@ defmodule BlesterWeb.AuthLive.Login do
   @impl true
   def handle_event("validate", %{"user" => user_params}, socket) do
     errors = validate_user(user_params)
-    {:noreply, assign(socket, errors: errors)}
+    {:noreply, assign(socket, user: user_params, errors: errors)}
   end
 
   @impl true
@@ -44,24 +63,24 @@ defmodule BlesterWeb.AuthLive.Login do
               <label for="email" class="sr-only">Email address</label>
               <input
                 id="email"
-                name="email"
+                name="user[email]"
                 type="email"
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
-                value={@user["email"].value}
+                value={@user["email"] || ""}
               />
             </div>
             <div>
               <label for="password" class="sr-only">Password</label>
               <input
                 id="password"
-                name="password"
+                name="user[password]"
                 type="password"
                 required
                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
-                value={@user["password"].value}
+                value={@user["password"] || ""}
               />
             </div>
           </div>
