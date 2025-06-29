@@ -9,49 +9,40 @@ defmodule BlesterWeb.LiveValidations do
   Validates user parameters for login/registration.
   """
   def validate_user(user_params) do
-    errors = %{}
-    errors = if user_params["email"] == "" or is_nil(user_params["email"]), do: Map.put(errors, :email, "Email is required"), else: errors
-    errors = if user_params["password"] == "" or is_nil(user_params["password"]), do: Map.put(errors, :password, "Password is required"), else: errors
-    errors
+    %{}
+    |> validate_required_field(user_params, "email", "Email is required")
+    |> validate_required_field(user_params, "password", "Password is required")
   end
 
   @doc """
   Validates registration parameters.
   """
   def validate_registration(user_params) do
-    errors = %{}
-    errors = if user_params["email"] == "" or is_nil(user_params["email"]), do: Map.put(errors, :email, "Email is required"), else: errors
-    errors = if user_params["first_name"] == "" or is_nil(user_params["first_name"]), do: Map.put(errors, :first_name, "First name is required"), else: errors
-    errors = if user_params["last_name"] == "" or is_nil(user_params["last_name"]), do: Map.put(errors, :last_name, "Last name is required"), else: errors
-    errors = if user_params["country"] == "" or is_nil(user_params["country"]), do: Map.put(errors, :country, "Country is required"), else: errors
-    errors = if user_params["password"] == "" or is_nil(user_params["password"]), do: Map.put(errors, :password, "Password is required"), else: errors
-    errors = if user_params["password_confirmation"] == "" or is_nil(user_params["password_confirmation"]), do: Map.put(errors, :password_confirmation, "Password confirmation is required"), else: errors
-
-    # Check if passwords match
-    if user_params["password"] != user_params["password_confirmation"] and user_params["password"] != "" and user_params["password_confirmation"] != "" do
-      Map.put(errors, :password_confirmation, "Passwords do not match")
-    else
-      errors
-    end
+    %{}
+    |> validate_required_field(user_params, "email", "Email is required")
+    |> validate_required_field(user_params, "first_name", "First name is required")
+    |> validate_required_field(user_params, "last_name", "Last name is required")
+    |> validate_required_field(user_params, "country", "Country is required")
+    |> validate_required_field(user_params, "password", "Password is required")
+    |> validate_required_field(user_params, "password_confirmation", "Password confirmation is required")
+    |> validate_password_match(user_params)
   end
 
   @doc """
   Validates post parameters.
   """
   def validate_post(post_params) do
-    errors = %{}
-    errors = if post_params["title"] == "" or is_nil(post_params["title"]), do: Map.put(errors, :title, "Title is required"), else: errors
-    errors = if post_params["content"] == "" or is_nil(post_params["content"]), do: Map.put(errors, :content, "Content is required"), else: errors
-    errors
+    %{}
+    |> validate_required_field(post_params, "title", "Title is required")
+    |> validate_required_field(post_params, "content", "Content is required")
   end
 
   @doc """
   Validates comment parameters.
   """
   def validate_comment(comment_params) do
-    errors = %{}
-    errors = if comment_params["content"] == "" or is_nil(comment_params["content"]), do: Map.put(errors, :content, "Content is required"), else: errors
-    errors
+    %{}
+    |> validate_required_field(comment_params, "content", "Content is required")
   end
 
   @doc """
@@ -90,5 +81,27 @@ defmodule BlesterWeb.LiveValidations do
   def add_flash_timer(socket, message_type, message) do
     Process.send_after(self(), :clear_flash, 3000)
     put_flash(socket, message_type, message)
+  end
+
+  # Private helper functions
+
+  defp validate_required_field(errors, params, field, message) do
+    value = params[field]
+    if value == "" or is_nil(value) do
+      Map.put(errors, String.to_existing_atom(field), message)
+    else
+      errors
+    end
+  end
+
+  defp validate_password_match(errors, params) do
+    password = params["password"]
+    confirmation = params["password_confirmation"]
+
+    if password != confirmation and password != "" and confirmation != "" do
+      Map.put(errors, :password_confirmation, "Passwords do not match")
+    else
+      errors
+    end
   end
 end

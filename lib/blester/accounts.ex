@@ -13,6 +13,76 @@ defmodule Blester.Accounts do
     resource Blester.Accounts.OrderItem
   end
 
+  # Generic pagination helper
+  defp paginate_query(query, limit, offset, search_filters \\ [], additional_filters \\ []) do
+    # Apply search filters
+    search_query = Enum.reduce(search_filters, query, fn {field, search}, acc ->
+      if search != "" and search != "all" do
+        Ash.Query.filter(acc, [{field, [ilike: "%#{search}%"]}])
+      else
+        acc
+      end
+    end)
+
+    # Apply additional filters
+    final_query = Enum.reduce(additional_filters, search_query, fn {field, value}, acc ->
+      if value != "" and value != "all" do
+        Ash.Query.filter(acc, [{field, value}])
+      else
+        acc
+      end
+    end)
+
+    # Get total count
+    total_count =
+      final_query
+      |> Ash.count()
+      |> case do
+        {:ok, count} -> count
+        _ -> 0
+      end
+
+    # Get paginated results
+    paginated_query = final_query
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.Query.limit(limit)
+    |> Ash.Query.offset(offset)
+
+    case Ash.read(paginated_query) do
+      {:ok, results} ->
+        {:ok, {results, total_count}}
+      _ ->
+        {:error, :query_failed}
+    end
+  end
+
+  # Generic CRUD helpers
+  defp update_resource(resource, id, attrs, error_atom) do
+    resource
+    |> Ash.Query.filter(id: id)
+    |> Ash.read_one()
+    |> case do
+      {:ok, record} ->
+        record
+        |> Ash.Changeset.for_update(:update, attrs)
+        |> Ash.update()
+      {:error, _} ->
+        {:error, error_atom}
+    end
+  end
+
+  defp delete_resource(resource, id, error_atom) do
+    resource
+    |> Ash.Query.filter(id: id)
+    |> Ash.read_one()
+    |> case do
+      {:ok, record} ->
+        Ash.destroy(record)
+      {:error, _} ->
+        {:error, error_atom}
+    end
+  end
+
   # In Ash 3.x, we can call Ash functions directly on resources
 
   def get_user_by_email(email) do
@@ -76,34 +146,49 @@ defmodule Blester.Accounts do
   def get_post(id) do
     Blester.Accounts.Post
     |> Ash.Query.filter(id: id)
-    |> Ash.Query.load([:author, :comments])
+    |> Ash.Query.load([:author, comments: [:author]])
     |> Ash.read_one()
   end
 
   def list_posts do
     Blester.Accounts.Post
-    |> Ash.Query.load([:author, :comments])
+    |> Ash.Query.load([:author, comments: [:author]])
     |> Ash.Query.sort(inserted_at: :desc)
     |> Ash.read()
   end
 
-  def list_posts_paginated(limit, offset) do
-    # Get total count
-    total_count =
-      Blester.Accounts.Post
-      |> Ash.count()
-      |> case do
-        {:ok, count} -> count
-        _ -> 0
-      end
+  def list_posts_paginated(limit, offset, search \\ "") do
+    # Get total count with search filter
+    total_count_query = Blester.Accounts.Post
+    |> Ash.Query.load([:author, comments: [:author]])
 
-    # Get paginated posts
-    posts_query =
-      Blester.Accounts.Post
-      |> Ash.Query.load([:author, :comments])
-      |> Ash.Query.sort(inserted_at: :desc)
-      |> Ash.Query.limit(limit)
-      |> Ash.Query.offset(offset)
+    total_count_query = if search != "" do
+      total_count_query
+      |> Ash.Query.filter(title: search)
+    else
+      total_count_query
+    end
+
+    total_count = total_count_query
+    |> Ash.count()
+    |> case do
+      {:ok, count} -> count
+      _ -> 0
+    end
+
+    # Get paginated posts with search filter
+    posts_query = Blester.Accounts.Post
+    |> Ash.Query.load([:author, comments: [:author]])
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.Query.limit(limit)
+    |> Ash.Query.offset(offset)
+
+    posts_query = if search != "" do
+      posts_query
+      |> Ash.Query.filter(title: search)
+    else
+      posts_query
+    end
 
     case Ash.read(posts_query) do
       {:ok, posts} ->
@@ -239,47 +324,13 @@ defmodule Blester.Accounts do
   end
 
   def list_products_paginated(limit, offset, search \\ "", category \\ "") do
-    # Build base query
     base_query = Blester.Accounts.Product
     |> Ash.Query.filter(is_active: true)
 
-    # Add search filter (case-insensitive)
-    search_query = if search != "" do
-      base_query
-      |> Ash.Query.filter(name: [ilike: "%#{search}%"])
-    else
-      base_query
-    end
+    search_filters = if search != "", do: [{:name, search}], else: []
+    additional_filters = if category != "", do: [{:category, category}], else: []
 
-    # Add category filter
-    final_query = if category != "" do
-      search_query
-      |> Ash.Query.filter(category: category)
-    else
-      search_query
-    end
-
-    # Get total count
-    total_count =
-      final_query
-      |> Ash.count()
-      |> case do
-        {:ok, count} -> count
-        _ -> 0
-      end
-
-    # Get paginated products
-    products_query = final_query
-    |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.Query.limit(limit)
-    |> Ash.Query.offset(offset)
-
-    case Ash.read(products_query) do
-      {:ok, products} ->
-        {:ok, {products, total_count}}
-      _ ->
-        {:error, :query_failed}
-    end
+    paginate_query(base_query, limit, offset, search_filters, additional_filters)
   end
 
   def get_categories do
@@ -375,7 +426,7 @@ defmodule Blester.Accounts do
 
   def create_order(user_id, attrs) do
     # Generate order number
-    order_number = "ORD-#{System.system_time(:millisecond)}"
+    order_number = generate_order_number()
 
     order_attrs = Map.merge(attrs, %{
       user_id: user_id,
@@ -491,116 +542,30 @@ defmodule Blester.Accounts do
   end
 
   def update_product(id, attrs) do
-    Blester.Accounts.Product
-    |> Ash.Query.filter(id: id)
-    |> Ash.read_one()
-    |> case do
-      {:ok, product} ->
-        product
-        |> Ash.Changeset.for_update(:update, attrs)
-        |> Ash.update()
-      {:error, _} ->
-        {:error, :product_not_found}
-    end
+    update_resource(Blester.Accounts.Product, id, attrs, :product_not_found)
   end
 
   def delete_product(id) do
-    Blester.Accounts.Product
-    |> Ash.Query.filter(id: id)
-    |> Ash.read_one()
-    |> case do
-      {:ok, product} ->
-        Ash.destroy(product)
-      {:error, _} ->
-        {:error, :product_not_found}
-    end
+    delete_resource(Blester.Accounts.Product, id, :product_not_found)
   end
 
   def list_products_paginated_admin(limit, offset, search \\ "", category \\ "") do
-    # Build base query
     base_query = Blester.Accounts.Product
 
-    # Add search filter (case-insensitive)
-    search_query = if search != "" do
-      base_query
-      |> Ash.Query.filter(name: [ilike: "%#{search}%"])
-    else
-      base_query
-    end
+    search_filters = if search != "", do: [{:name, search}], else: []
+    additional_filters = if category != "" and category != "all", do: [{:category, category}], else: []
 
-    # Add category filter
-    final_query = if category != "" and category != "all" do
-      search_query
-      |> Ash.Query.filter(category: category)
-    else
-      search_query
-    end
-
-    # Get total count
-    total_count =
-      final_query
-      |> Ash.count()
-      |> case do
-        {:ok, count} -> count
-        _ -> 0
-      end
-
-    # Get paginated products
-    products_query = final_query
-    |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.Query.limit(limit)
-    |> Ash.Query.offset(offset)
-
-    case Ash.read(products_query) do
-      {:ok, products} ->
-        {:ok, {products, total_count}}
-      _ ->
-        {:error, :query_failed}
-    end
+    paginate_query(base_query, limit, offset, search_filters, additional_filters)
   end
 
   def list_orders_paginated(limit, offset, search \\ "", status \\ "") do
-    # Build base query
     base_query = Blester.Accounts.Order
     |> Ash.Query.load([:user])
 
-    # Add search filter
-    search_query = if search != "" do
-      base_query
-      |> Ash.Query.filter(user: [first_name: [ilike: "%#{search}%"]])
-    else
-      base_query
-    end
+    search_filters = if search != "", do: [{:user, [first_name: search]}], else: []
+    additional_filters = if status != "" and status != "all", do: [{:status, status}], else: []
 
-    # Add status filter
-    final_query = if status != "" and status != "all" do
-      search_query
-      |> Ash.Query.filter(status: status)
-    else
-      search_query
-    end
-
-    # Get total count
-    total_count =
-      final_query
-      |> Ash.count()
-      |> case do
-        {:ok, count} -> count
-        _ -> 0
-      end
-
-    # Get paginated orders
-    orders_query = final_query
-    |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.Query.limit(limit)
-    |> Ash.Query.offset(offset)
-
-    case Ash.read(orders_query) do
-      {:ok, orders} ->
-        {:ok, {orders, total_count}}
-      _ ->
-        {:error, :query_failed}
-    end
+    paginate_query(base_query, limit, offset, search_filters, additional_filters)
   end
 
   def get_order_with_items(id) do
@@ -611,73 +576,19 @@ defmodule Blester.Accounts do
   end
 
   def update_order_status(id, status) do
-    Blester.Accounts.Order
-    |> Ash.Query.filter(id: id)
-    |> Ash.read_one()
-    |> case do
-      {:ok, order} ->
-        order
-        |> Ash.Changeset.for_update(:update, %{status: status})
-        |> Ash.update()
-      {:error, _} ->
-        {:error, :order_not_found}
-    end
+    update_resource(Blester.Accounts.Order, id, %{status: status}, :order_not_found)
   end
 
   def list_users_paginated(limit, offset, search \\ "", role \\ "") do
-    # Build base query
     base_query = Blester.Accounts.User
 
-    # Add search filter
-    search_query = if search != "" do
-      base_query
-      |> Ash.Query.filter([first_name: [ilike: "%#{search}%"], last_name: [ilike: "%#{search}%"], email: [ilike: "%#{search}%"]])
-    else
-      base_query
-    end
+    search_filters = if search != "", do: [{:first_name, search}, {:last_name, search}, {:email, search}], else: []
+    additional_filters = if role != "" and role != "all", do: [{:role, role}], else: []
 
-    # Add role filter
-    final_query = if role != "" and role != "all" do
-      search_query
-      |> Ash.Query.filter(role: role)
-    else
-      search_query
-    end
-
-    # Get total count
-    total_count =
-      final_query
-      |> Ash.count()
-      |> case do
-        {:ok, count} -> count
-        _ -> 0
-      end
-
-    # Get paginated users
-    users_query = final_query
-    |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.Query.limit(limit)
-    |> Ash.Query.offset(offset)
-
-    case Ash.read(users_query) do
-      {:ok, users} ->
-        {:ok, {users, total_count}}
-      _ ->
-        {:error, :query_failed}
-    end
+    paginate_query(base_query, limit, offset, search_filters, additional_filters)
   end
 
   def update_user_role(id, role) do
-    Blester.Accounts.User
-    |> Ash.Query.filter(id: id)
-    |> Ash.read_one()
-    |> case do
-      {:ok, user} ->
-        user
-        |> Ash.Changeset.for_update(:update, %{role: role})
-        |> Ash.update()
-      {:error, _} ->
-        {:error, :user_not_found}
-    end
+    update_resource(Blester.Accounts.User, id, %{role: role}, :user_not_found)
   end
 end

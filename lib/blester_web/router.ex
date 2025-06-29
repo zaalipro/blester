@@ -25,7 +25,6 @@ defmodule BlesterWeb.Router do
     get "/set_session", SessionController, :set_session
     get "/logout", SessionController, :logout
     live "/blog", BlogLive.Index
-    live "/blog/:id", BlogLive.Show
     live "/shop", ShopLive.Index
     live "/shop/:id", ShopLive.Show
   end
@@ -35,6 +34,7 @@ defmodule BlesterWeb.Router do
     pipe_through [:browser, BlesterWeb.Plugs.AuthenticateUser]
 
     live "/blog/new", BlogLive.New
+    live "/blog/:id", BlogLive.Show
     live "/blog/:id/edit", BlogLive.Edit
     live "/blog/:id/comments/:comment_id/edit", BlogLive.EditComment
     live "/cart", ShopLive.Cart

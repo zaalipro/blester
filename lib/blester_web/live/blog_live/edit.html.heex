@@ -2,7 +2,7 @@
   <div class="max-w-2xl mx-auto">
     <%= if @post do %>
       <div class="mb-8">
-        <a href={"/blog/#{@post.id}"} class="text-blue-600 hover:text-blue-800">
+        <a href={"/blog/#{@post_id}"} class="text-blue-600 hover:text-blue-800">
           ← Back to Post
         </a>
         <h1 class="text-3xl font-bold text-gray-900 mt-4">Edit Post</h1>
@@ -47,7 +47,7 @@
           <button type="submit" class="btn btn-primary">
             Update Post
           </button>
-          <a href={"/blog/#{@post.id}"} class="btn btn-secondary">
+          <a href={"/blog/#{@post_id}"} class="btn btn-secondary">
             Cancel
           </a>
         </div>

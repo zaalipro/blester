@@ -2,10 +2,12 @@ defmodule BlesterWeb.BlogLive.Show do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
   alias Blester.Accounts
+  alias BlesterWeb.LiveView.Authentication
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
-    user_id = session[:user_id]
+    # For public posts, we don't require authentication but still want user info if available
+    user_id = session["user_id"]
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
     current_user = case user_id do
       nil -> nil
@@ -49,11 +51,9 @@ defmodule BlesterWeb.BlogLive.Show do
 
   @impl true
   def handle_event("create-comment", %{"comment" => comment_params}, socket) do
-    case socket.assigns.current_user_id do
-      nil ->
-        {:noreply, push_navigate(socket, to: "/login")}
-      user_id ->
-        comment_params = Map.put(comment_params, "author_id", user_id)
+    case Authentication.require_authentication(socket) do
+      {:ok, socket} ->
+        comment_params = Map.put(comment_params, "author_id", socket.assigns.current_user_id)
         comment_params = Map.put(comment_params, "post_id", socket.assigns.post.id)
 
         case Accounts.create_comment(comment_params) do
@@ -69,18 +69,18 @@ defmodule BlesterWeb.BlogLive.Show do
             errors = format_errors(changeset.errors)
             {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to add comment")}
         end
+      {:error, :redirect} ->
+        {:noreply, push_navigate(socket, to: "/login")}
     end
   end
 
   @impl true
   def handle_event("delete-comment", %{"comment-id" => comment_id}, socket) do
-    case socket.assigns.current_user_id do
-      nil ->
-        {:noreply, push_navigate(socket, to: "/login")}
-      user_id ->
+    case Authentication.require_authentication(socket) do
+      {:ok, socket} ->
         case Accounts.get_comment(comment_id) do
           {:ok, comment} ->
-            if comment.author_id == user_id do
+            if comment.author_id == socket.assigns.current_user_id do
               case Accounts.delete_comment(comment_id) do
                 {:ok, _} ->
                   # Reload the post to get updated comments
@@ -99,6 +99,8 @@ defmodule BlesterWeb.BlogLive.Show do
           {:error, _} ->
             {:noreply, add_flash_timer(socket, :error, "Comment not found")}
         end
+      {:error, :redirect} ->
+        {:noreply, push_navigate(socket, to: "/login")}
     end
   end
 
@@ -109,30 +111,25 @@ defmodule BlesterWeb.BlogLive.Show do
 
   @impl true
   def handle_event("delete_post", %{"id" => id}, socket) do
-    post = socket.assigns.post
-    user = current_user(socket)
-    if post && user && post.author_id == user.id do
-      case Accounts.delete_post(id) do
-        :ok ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Post deleted successfully.")
-           |> push_navigate(to: "/blog")}
-        {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Failed to delete post.")}
-      end
-    else
-      {:noreply, put_flash(socket, :error, "Not authorized to delete this post.")}
-    end
-  end
-
-  defp current_user(socket) do
-    case socket.assigns.current_user_id do
-      nil -> nil
-      user_id -> case Accounts.get_user(user_id) do
-        {:ok, user} -> user
-        _ -> nil
-      end
+    case Authentication.require_authentication(socket) do
+      {:ok, socket} ->
+        post = socket.assigns.post
+        user = socket.assigns.current_user
+        if post && user && post.author_id == user.id do
+          case Accounts.delete_post(id) do
+            :ok ->
+              {:noreply,
+               socket
+               |> put_flash(:info, "Post deleted successfully.")
+               |> push_navigate(to: "/blog")}
+            {:error, _} ->
+              {:noreply, put_flash(socket, :error, "Failed to delete post.")}
+          end
+        else
+          {:noreply, put_flash(socket, :error, "Not authorized to delete this post.")}
+        end
+      {:error, :redirect} ->
+        {:noreply, push_navigate(socket, to: "/login")}
     end
   end
 end

@@ -6,13 +6,14 @@ defmodule BlesterWeb.BlogLive.Edit do
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
-    Authentication.mount_authenticated(%{"id" => id}, session, socket, fn %{"id" => id}, socket ->
+    Authentication.mount_authenticated(%{"id" => id}, session, socket, fn _params, socket ->
       case Accounts.get_post(id) do
         {:ok, post} ->
-          if post.author_id == socket.assigns.current_user_id do
+          if post.author_id == socket.assigns.current_user.id do
+            # Convert Ash struct to map with string keys for template access
             post_map = %{
-              "title" => post.title,
-              "content" => post.content
+              "title" => Map.get(post, :title),
+              "content" => Map.get(post, :content)
             }
             {:ok, assign(socket, post: post_map, post_id: id, errors: %{})}
           else
@@ -43,77 +44,13 @@ defmodule BlesterWeb.BlogLive.Edit do
   @impl true
   def handle_event("validate", %{"post" => post_params}, socket) do
     errors = validate_post(post_params)
-    {:noreply, assign(socket, post: post_params, errors: errors)}
+    # Merge the original post data with the new params to preserve existing content
+    updated_post = Map.merge(socket.assigns.post, post_params)
+    {:noreply, assign(socket, post: updated_post, errors: errors)}
   end
 
   @impl true
   def handle_info(:clear_flash, socket) do
     {:noreply, clear_flash(socket)}
-  end
-
-  @impl true
-  def render(assigns) do
-    ~H"""
-    <div class="container mx-auto px-4 py-8">
-      <div class="max-w-4xl mx-auto">
-        <div class="mb-8">
-          <a href="/blog" class="text-blue-600 hover:text-blue-800">
-            ← Back to Blog
-          </a>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-md p-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-6">Edit Post</h1>
-
-          <form phx-change="validate" phx-submit="save" class="space-y-6">
-            <div>
-              <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
-                Title
-              </label>
-              <input
-                type="text"
-                name="post[title]"
-                id="title"
-                value={@post["title"]}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter post title..."
-                required
-              />
-              <%= if @errors[:title] do %>
-                <p class="mt-1 text-sm text-red-600"><%= @errors[:title] %></p>
-              <% end %>
-            </div>
-
-            <div>
-              <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
-                Content
-              </label>
-              <textarea
-                name="post[content]"
-                id="content"
-                rows="12"
-                value={@post["content"]}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Write your post content here..."
-                required
-              ></textarea>
-              <%= if @errors[:content] do %>
-                <p class="mt-1 text-sm text-red-600"><%= @errors[:content] %></p>
-              <% end %>
-            </div>
-
-            <div class="flex justify-end space-x-4">
-              <a href="/blog" class="btn btn-secondary">
-                Cancel
-              </a>
-              <button type="submit" class="btn btn-primary">
-                Update Post
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    """
   end
 end
