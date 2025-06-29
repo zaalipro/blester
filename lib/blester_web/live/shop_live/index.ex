@@ -15,7 +15,8 @@ defmodule BlesterWeb.ShopLive.Index do
       categories: [],
       loading: false,
       quick_view_product: nil,
-      current_user_id: user_id
+      current_user_id: user_id,
+      adding_to_cart: []
     )}
   end
 
@@ -48,7 +49,11 @@ defmodule BlesterWeb.ShopLive.Index do
       user_id ->
         case Accounts.add_to_cart(user_id, product_id) do
           {:ok, _cart_item} ->
-            {:noreply, socket |> put_flash(:info, "Product added to cart!")}
+            # Get updated cart count
+            cart_count = get_cart_count(user_id)
+            {:noreply, socket
+              |> put_flash(:info, "Product added to cart!")
+              |> push_event("update-cart-count", %{count: cart_count})}
           {:error, _changeset} ->
             {:noreply, socket |> put_flash(:error, "Failed to add product to cart")}
         end
@@ -110,5 +115,12 @@ defmodule BlesterWeb.ShopLive.Index do
     params = if opts[:page] && opts[:page] != 1, do: params ++ ["page=#{opts[:page]}"], else: params
 
     if params == [], do: "/shop", else: "/shop?#{Enum.join(params, "&")}"
+  end
+
+  defp get_cart_count(user_id) do
+    case Accounts.get_user_cart(user_id) do
+      cart_items when is_list(cart_items) -> length(cart_items)
+      _ -> 0
+    end
   end
 end

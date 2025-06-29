@@ -31,6 +31,33 @@ const CategoryFilter = {
   }
 }
 
+// Cart count update handler
+const handleCartCountUpdate = (count) => {
+  const cartCountElement = document.getElementById('cart-count')
+  if (cartCountElement) {
+    cartCountElement.textContent = count
+    // Add a brief animation
+    cartCountElement.classList.add('animate-pulse')
+    setTimeout(() => {
+      cartCountElement.classList.remove('animate-pulse')
+    }, 1000)
+  }
+}
+
+// Auto-dismiss flash messages
+const autoDismissFlashMessages = () => {
+  const flashMessages = document.querySelectorAll('[data-flash]')
+  flashMessages.forEach(message => {
+    setTimeout(() => {
+      message.style.transition = 'opacity 0.5s ease-out'
+      message.style.opacity = '0'
+      setTimeout(() => {
+        message.remove()
+      }, 500)
+    }, 3000)
+  })
+}
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
@@ -45,6 +72,14 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
-// connect if there are any LiveViews on the page
+// Listen for cart count updates
 liveSocket.connect()
+liveSocket.onMessage((event) => {
+  if (event.event === "update-cart-count") {
+    handleCartCountUpdate(event.payload.count)
+  }
+})
+
+// Auto-dismiss flash messages on page load
+document.addEventListener('DOMContentLoaded', autoDismissFlashMessages)
 
