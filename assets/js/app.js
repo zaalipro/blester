@@ -22,10 +22,22 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
+// Category Filter Hook
+const CategoryFilter = {
+  mounted() {
+    this.el.addEventListener('change', (e) => {
+      this.pushEvent('filter-category', { category: e.target.value })
+    })
+  }
+}
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken}
+  params: {_csrf_token: csrfToken},
+  hooks: {
+    CategoryFilter
+  }
 })
 
 // Show progress bar on live navigation and form submits

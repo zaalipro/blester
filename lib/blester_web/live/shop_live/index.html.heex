@@ -34,12 +34,12 @@
         <!-- Category Filter -->
         <div>
           <select 
-            phx-change="filter-category" 
+            id="category-filter"
+            phx-hook="CategoryFilter" 
             name="category" 
-            value={@category}
             class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">All Categories</option>
+            <option value="" selected={@category == ""}>All Categories</option>
             <%= for category <- @categories do %>
               <option value={category} selected={@category == category}><%= category %></option>
             <% end %>
@@ -108,19 +108,19 @@
         <nav class="flex items-center space-x-2">
           <%= if @page > 1 do %>
             <%= live_patch "Previous", 
-                to: "/shop?page=#{@page - 1}",
+                to: build_pagination_url(@page - 1, @search, @category),
                 class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
           <% end %>
           
           <%= for page_num <- max(1, @page - 2)..min(total_pages(@total_count, @per_page), @page + 2) do %>
             <%= live_patch page_num, 
-                to: "/shop?page=#{page_num}",
+                to: build_pagination_url(page_num, @search, @category),
                 class: "px-3 py-2 text-sm font-medium #{if page_num == @page, do: "bg-blue-600 text-white", else: "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50"} rounded-md" %>
           <% end %>
           
           <%= if @page < total_pages(@total_count, @per_page) do %>
             <%= live_patch "Next", 
-                to: "/shop?page=#{@page + 1}",
+                to: build_pagination_url(@page + 1, @search, @category),
                 class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
           <% end %>
         </nav>
