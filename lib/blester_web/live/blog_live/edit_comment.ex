@@ -3,33 +3,33 @@ defmodule BlesterWeb.BlogLive.EditComment do
 
   alias Blester.Accounts
 
+  defp current_user(socket) do
+    user_id = socket.assigns[:current_user_id]
+    case user_id do
+      nil -> nil
+      id ->
+        case Accounts.get_user(id) do
+          {:ok, user} -> user
+          _ -> nil
+        end
+    end
+  end
+
   @impl true
-  def mount(%{"id" => post_id, "comment_id" => comment_id}, session, socket) do
-    # Get user_id from session (which is populated by the SetCurrentUser plug)
-    user_id = session["user_id"] || session[:user_id]
+  def mount(%{"id" => _id, "comment_id" => comment_id}, session, socket) do
+    user_id = session["user_id"]
     case Accounts.get_comment(comment_id) do
       {:ok, comment} ->
-        if comment.author_id == user_id do
-          {:ok,
-           socket
-           |> assign(current_user_id: user_id)
-           |> assign(:page_title, "Edit Comment")
-           |> assign(:comment, comment)
-           |> assign(:post_id, post_id)}
-        else
-          {:ok,
-           socket
-           |> assign(current_user_id: user_id)
-           |> put_flash(:error, "Not authorized to edit this comment")
-           |> push_navigate(to: "/blog/#{post_id}")}
-        end
-
+        {:ok,
+         socket
+         |> assign(:comment, comment)
+         |> assign(:page_title, "Edit Comment")
+         |> assign(:current_user_id, user_id)}
       {:error, _} ->
         {:ok,
          socket
-         |> assign(current_user_id: user_id)
          |> put_flash(:error, "Comment not found")
-         |> push_navigate(to: "/blog/#{post_id}")}
+         |> push_navigate(to: "/blog")}
     end
   end
 
@@ -39,7 +39,8 @@ defmodule BlesterWeb.BlogLive.EditComment do
       {:ok, post} ->
         case Accounts.get_comment(comment_id) do
           {:ok, comment} ->
-            if comment.author_id == socket.assigns.current_user_id do
+            user = current_user(socket)
+            if user && comment.author_id == user.id do
               {:noreply,
                assign(socket,
                  comment: comment,
@@ -52,14 +53,12 @@ defmodule BlesterWeb.BlogLive.EditComment do
                |> put_flash(:error, "Not authorized to edit this comment.")
                |> push_navigate(to: "/blog/#{post.id}")}
             end
-
           {:error, _} ->
             {:noreply,
              socket
              |> put_flash(:error, "Comment not found.")
              |> push_navigate(to: "/blog/#{post.id}")}
         end
-
       {:error, _} ->
         {:noreply,
          socket

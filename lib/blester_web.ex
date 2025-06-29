@@ -52,7 +52,6 @@ defmodule BlesterWeb do
     quote do
       use Phoenix.LiveView,
         layout: {BlesterWeb.Layouts, :app}
-
       unquote(html_helpers())
     end
   end

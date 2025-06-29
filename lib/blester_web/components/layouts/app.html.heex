@@ -7,15 +7,12 @@
       </a>
       <nav class="flex items-center space-x-8">
         <a href="/blog" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Blog</a>
-        <!-- Debug: current_user_id = <%= inspect(@current_user_id) %> -->
         <%= if @current_user_id do %>
-          <form method="post" action="/logout" style="display:inline;">
-            <input type="hidden" name="_method" value="delete" />
-            <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
-            <button type="submit" class="text-gray-600 hover:text-gray-900 font-medium transition-colors" style="background:none; border:none; padding:0; cursor:pointer;">
-              Logout
-            </button>
-          </form>
+          <a href="/logout" 
+             onclick="return confirm('Are you sure you want to logout?')"
+             class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+            Logout
+          </a>
         <% else %>
           <a href="/login" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Log in</a>
           <a href="/register" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Register</a>

@@ -61,7 +61,6 @@ defmodule Blester.MixProject do
       {:ash, "~> 3.5.24"},
       {:ash_phoenix, "~> 2.3.9"},
       {:ash_postgres, "~> 2.6.9"},
-      {:ash_authentication, "~> 4.9.4"},
       {:bcrypt_elixir, "~> 3.0"}
     ]
   end

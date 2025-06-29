@@ -18,9 +18,32 @@ defmodule Blester.Accounts do
   end
 
   def create_user(attrs) do
+    # Hash the password before creating the user
+    attrs = Map.put(attrs, :hashed_password, Bcrypt.hash_pwd_salt(attrs.password))
+    attrs = Map.delete(attrs, :password)
+
     Blester.Accounts.User
     |> Ash.Changeset.for_create(:create, attrs)
     |> Ash.create()
+  end
+
+  def authenticate_user(email, password) do
+    case get_user_by_email(email) do
+      {:ok, user} ->
+        if Bcrypt.verify_pass(password, user.hashed_password) do
+          {:ok, user}
+        else
+          {:error, :invalid_credentials}
+        end
+      {:error, _} ->
+        {:error, :invalid_credentials}
+    end
+  end
+
+  def get_user(id) do
+    Blester.Accounts.User
+    |> Ash.Query.filter(id: id)
+    |> Ash.read_one()
   end
 
   # Blog functions

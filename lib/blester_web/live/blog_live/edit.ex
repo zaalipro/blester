@@ -3,30 +3,31 @@ defmodule BlesterWeb.BlogLive.Edit do
 
   alias Blester.Accounts
 
+  defp current_user(socket) do
+    user_id = socket.assigns[:current_user_id]
+    case user_id do
+      nil -> nil
+      id ->
+        case Accounts.get_user(id) do
+          {:ok, user} -> user
+          _ -> nil
+        end
+    end
+  end
+
   @impl true
   def mount(%{"id" => id}, session, socket) do
-    # Get user_id from session (which is populated by the SetCurrentUser plug)
-    user_id = session["user_id"] || session[:user_id]
+    user_id = session["user_id"]
     case Accounts.get_post(id) do
       {:ok, post} ->
-        if post.author_id == user_id do
-          {:ok,
-           socket
-           |> assign(current_user_id: user_id)
-           |> assign(:page_title, "Edit Post")
-           |> assign(:post, post)}
-        else
-          {:ok,
-           socket
-           |> assign(current_user_id: user_id)
-           |> put_flash(:error, "Not authorized to edit this post")
-           |> push_navigate(to: "/blog")}
-        end
-
+        {:ok,
+         socket
+         |> assign(:post, post)
+         |> assign(:page_title, "Edit Post")
+         |> assign(:current_user_id, user_id)}
       {:error, _} ->
         {:ok,
          socket
-         |> assign(current_user_id: user_id)
          |> put_flash(:error, "Post not found")
          |> push_navigate(to: "/blog")}
     end
@@ -36,7 +37,8 @@ defmodule BlesterWeb.BlogLive.Edit do
   def handle_params(%{"id" => id}, _url, socket) do
     case Accounts.get_post(id) do
       {:ok, post} ->
-        if post.author_id == socket.assigns.current_user_id do
+        user = current_user(socket)
+        if user && post.author_id == user.id do
           {:noreply,
            assign(socket,
              post: post,
@@ -48,7 +50,6 @@ defmodule BlesterWeb.BlogLive.Edit do
            |> put_flash(:error, "Not authorized to edit this post.")
            |> push_navigate(to: "/blog/#{post.id}")}
         end
-
       {:error, _} ->
         {:noreply,
          socket

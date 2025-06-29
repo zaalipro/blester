@@ -1,14 +1,14 @@
-defmodule BlesterWeb.PageHTML do
-  @moduledoc """
-  This module contains pages rendered by PageController.
+defmodule BlesterWeb.PageLive.Home do
+  use BlesterWeb, :live_view
 
-  See the `page_html` directory for all templates available.
-  """
-  use BlesterWeb, :html
+  @impl true
+  def mount(_params, session, socket) do
+    user_id = session["user_id"]
+    {:ok, assign(socket, current_user_id: user_id, page_title: "Blester")}
+  end
 
-  embed_templates "page_html/*"
-
-  def home(assigns) do
+  @impl true
+  def render(assigns) do
     ~H"""
     <div class="container mx-auto px-4 py-8">
       <div class="max-w-2xl mx-auto text-center">

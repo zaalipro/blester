@@ -1,92 +1,85 @@
 defmodule BlesterWeb.AuthLive.Login do
   use BlesterWeb, :live_view
 
-  alias Blester.Accounts
-
-  @impl true
-  def mount(_params, session, socket) do
-    user_id = session["user_id"] || session[:user_id]
-    {:ok,
-     socket
-     |> assign(current_user_id: user_id)
-     |> assign(:page_title, "Log in")
-     |> assign(:user, %{email: "", password: ""})
-     |> assign(:errors, [])}
+  def mount(_params, _session, socket) do
+    {:ok, assign(socket, form: to_form(%{"email" => "", "password" => ""}))}
   end
 
-  @impl true
-  def handle_event("save", %{"user" => user_params}, socket) do
-    case authenticate_user(user_params) do
+  def handle_event("validate", %{"email" => email, "password" => password}, socket) do
+    form = to_form(%{"email" => email, "password" => password})
+    {:noreply, assign(socket, form: form)}
+  end
+
+  def handle_event("login", %{"email" => email, "password" => password}, socket) do
+    case Blester.Accounts.authenticate_user(email, password) do
       {:ok, user} ->
-        # Redirect to controller action to set session
         {:noreply,
          socket
          |> put_flash(:info, "Welcome back!")
-         |> push_navigate(to: "/auth/set_session?user_id=#{user.id}")}
+         |> redirect(to: "/set_session?user_id=#{user.id}")}
 
-      {:error, reason} ->
+      {:error, :invalid_credentials} ->
         {:noreply,
          socket
          |> put_flash(:error, "Invalid email or password")
-         |> assign(user: user_params)
-         |> assign(errors: [reason])}
+         |> assign(form: to_form(%{"email" => email, "password" => ""}))}
     end
   end
 
-  @impl true
-  def handle_event("save", params, socket) do
-    # Handle the case where params come directly without the "user" wrapper
-    user_params = %{
-      "email" => params["email"] || "",
-      "password" => params["password"] || ""
-    }
+  def render(assigns) do
+    ~H"""
+    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-md w-full space-y-8">
+        <div>
+          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+        </div>
+        <form class="mt-8 space-y-6" phx-submit="login" phx-change="validate">
+          <div class="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label for="email" class="sr-only">Email address</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
+                value={@form["email"].value}
+              />
+            </div>
+            <div>
+              <label for="password" class="sr-only">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
+                value={@form["password"].value}
+              />
+            </div>
+          </div>
 
-    case authenticate_user(user_params) do
-      {:ok, user} ->
-        # Redirect to controller action to set session
-        {:noreply,
-         socket
-         |> put_flash(:info, "Welcome back!")
-         |> push_navigate(to: "/auth/set_session?user_id=#{user.id}")}
+          <div>
+            <button
+              type="submit"
+              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Sign in
+            </button>
+          </div>
 
-      {:error, reason} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Invalid email or password")
-         |> assign(user: user_params)
-         |> assign(errors: [reason])}
-    end
+          <div class="text-center">
+            <a href="/register" class="text-indigo-600 hover:text-indigo-500">
+              Don't have an account? Sign up
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+    """
   end
-
-  @impl true
-  def handle_event("validate", %{"user" => user_params}, socket) do
-    {:noreply, assign(socket, user: user_params)}
-  end
-
-  @impl true
-  def handle_event("validate", params, socket) do
-    # Handle individual field validation
-    current_user = socket.assigns.user
-
-    # Update only the field that changed, preserving all others
-    user_params = cond do
-      Map.has_key?(params, "email") ->
-        Map.put(current_user, "email", params["email"])
-      Map.has_key?(params, "password") ->
-        Map.put(current_user, "password", params["password"])
-      true ->
-        current_user  # No changes, preserve current state
-    end
-
-    {:noreply, assign(socket, user: user_params)}
-  end
-
-  defp authenticate_user(%{"email" => email, "password" => password}) do
-    case Accounts.User.authenticate(email, password) do
-      {:ok, user} -> {:ok, user}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp authenticate_user(_), do: {:error, "Invalid credentials"}
 end

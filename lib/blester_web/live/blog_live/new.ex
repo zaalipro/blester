@@ -5,19 +5,18 @@ defmodule BlesterWeb.BlogLive.New do
 
   @impl true
   def mount(_params, session, socket) do
-    # Try to get user_id from cookies first, then fall back to session
-    cookies = get_connect_info(socket, :cookies) || %{}
-    user_id = cookies["user_id"] || session["user_id"] || session[:user_id]
+    user_id = session["user_id"]
     {:ok,
      socket
-     |> assign(current_user_id: user_id)
      |> assign(:page_title, "New Post")
-     |> assign(:post, %{title: "", content: ""})}
+     |> assign(:post, %{title: "", content: ""})
+     |> assign(:current_user_id, user_id)}
   end
 
   @impl true
   def handle_event("save", %{"post" => post_params}, socket) do
-    author_id = socket.assigns.current_user_id
+    user = current_user(socket)
+    author_id = user && user.id
     attrs = Map.put(post_params, "author_id", author_id)
 
     case Accounts.create_post(attrs) do
@@ -26,7 +25,6 @@ defmodule BlesterWeb.BlogLive.New do
          socket
          |> put_flash(:info, "Post created successfully.")
          |> push_navigate(to: "/blog/#{post.id}")}
-
       {:error, changeset} ->
         {:noreply,
          assign(socket,
@@ -47,5 +45,17 @@ defmodule BlesterWeb.BlogLive.New do
         String.replace(acc, "%{#{key}}", to_string(value))
       end)
     end)
+  end
+
+  defp current_user(socket) do
+    user_id = socket.assigns[:current_user_id]
+    case user_id do
+      nil -> nil
+      id ->
+        case Accounts.get_user(id) do
+          {:ok, user} -> user
+          _ -> nil
+        end
+    end
   end
 end

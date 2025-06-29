@@ -18,13 +18,13 @@ defmodule BlesterWeb.Router do
   scope "/", BlesterWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
-    delete "/logout", PageController, :logout
-    get "/auth/set_session", PageController, :set_session
+    live "/", PageLive.Home
 
-    # Auth LiveView routes
+    # Custom authentication routes
     live "/login", AuthLive.Login
     live "/register", AuthLive.Register
+    get "/set_session", SessionController, :set_session
+    get "/logout", SessionController, :logout
 
     # Blog LiveView routes
     live "/blog", BlogLive.Index

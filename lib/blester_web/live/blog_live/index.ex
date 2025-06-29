@@ -5,12 +5,10 @@ defmodule BlesterWeb.BlogLive.Index do
 
   @impl true
   def mount(_params, session, socket) do
-    # Get user_id from session (which is populated by the SetCurrentUser plug)
-    user_id = session["user_id"] || session[:user_id]
+    user_id = session["user_id"]
     {:ok,
      socket
-     |> assign(current_user_id: user_id)
-     |> assign(page_title: "Blog", posts: [], current_page: 1, total_pages: 1, total_count: 0, per_page: 10)}
+     |> assign(page_title: "Blog", posts: [], current_page: 1, total_pages: 1, total_count: 0, per_page: 10, current_user_id: user_id)}
   end
 
   @impl true
@@ -27,8 +25,9 @@ defmodule BlesterWeb.BlogLive.Index do
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     post = Enum.find(socket.assigns.posts, &(&1.id == id))
+    user = current_user(socket)
 
-    if post && post.author_id == socket.assigns.current_user_id do
+    if post && user && post.author_id == user.id do
       case Accounts.delete_post(id) do
         :ok ->
           {:noreply,
@@ -65,6 +64,18 @@ defmodule BlesterWeb.BlogLive.Index do
            total_pages: 1,
            total_count: 0
          )}
+    end
+  end
+
+  defp current_user(socket) do
+    user_id = socket.assigns[:current_user_id]
+    case user_id do
+      nil -> nil
+      id ->
+        case Accounts.get_user(id) do
+          {:ok, user} -> user
+          _ -> nil
+        end
     end
   end
 end
