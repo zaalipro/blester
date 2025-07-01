@@ -60,6 +60,7 @@
             <select 
               name="category" 
               class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+              onchange="this.form.submit()"
             >
               <option value="" selected={@category == ""}>All Categories</option>
               <%= for category <- @categories do %>
