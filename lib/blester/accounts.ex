@@ -31,7 +31,7 @@ defmodule Blester.Accounts do
     # Apply additional filters
     final_query = Enum.reduce(additional_filters, search_query, fn {field, value}, acc ->
       if value != "" and value != "all" do
-        Ash.Query.filter(acc, [{field, [ilike: value]}])
+        Ash.Query.filter(acc, [{field, [ilike: ^value]}])
       else
         acc
       end
