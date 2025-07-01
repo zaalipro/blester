@@ -3,6 +3,7 @@ defmodule BlesterWeb.BlogLive.EditComment do
   import BlesterWeb.LiveValidations
   alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
+  import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
 
   @impl true
   def mount(%{"id" => post_id, "comment_id" => comment_id}, session, socket) do
@@ -26,17 +27,14 @@ defmodule BlesterWeb.BlogLive.EditComment do
 
   @impl true
   def handle_event("save", %{"comment" => comment_params}, socket) do
-    case Authentication.require_authentication(socket) do
-      {:ok, socket} ->
-        case Accounts.update_comment(socket.assigns.comment_id, comment_params) do
-          {:ok, _comment} ->
-            {:noreply, add_flash_timer(socket, :info, "Comment updated successfully") |> push_navigate(to: "/blog/#{socket.assigns.post_id}")}
-          {:error, changeset} ->
-            errors = format_errors(changeset.errors)
-            {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to update comment")}
-        end
-      {:error, :redirect} ->
-        {:noreply, push_navigate(socket, to: "/login")}
+    with_auth socket do
+      case Accounts.update_comment(socket.assigns.comment_id, comment_params) do
+        {:ok, _comment} ->
+          {:noreply, add_flash_timer(socket, :info, "Comment updated successfully") |> push_navigate(to: "/blog/#{socket.assigns.post_id}")}
+        {:error, changeset} ->
+          errors = format_errors(changeset.errors)
+          {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to update comment")}
+      end
     end
   end
 

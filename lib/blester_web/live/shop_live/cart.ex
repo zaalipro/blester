@@ -3,6 +3,7 @@ defmodule BlesterWeb.ShopLive.Cart do
   import BlesterWeb.LiveValidations
   alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
+  import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
 
   @impl true
   def mount(_params, session, socket) do
@@ -19,60 +20,51 @@ defmodule BlesterWeb.ShopLive.Cart do
 
   @impl true
   def handle_event("update-quantity", %{"item-id" => item_id, "quantity" => quantity}, socket) do
-    case Authentication.require_authentication(socket) do
-      {:ok, socket} ->
-        case Accounts.update_cart_item_quantity(item_id, String.to_integer(quantity)) do
-          {:ok, _} ->
-            case Accounts.get_cart_items(socket.assigns.current_user_id) do
-              {:ok, cart_items} ->
-                cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
-                total = calculate_total(cart_items)
-                {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Cart updated")}
-              {:error, _} ->
-                {:noreply, add_flash_timer(socket, :error, "Failed to update cart")}
-            end
-          {:error, _} ->
-            {:noreply, add_flash_timer(socket, :error, "Failed to update quantity")}
-        end
-      {:error, :redirect} ->
-        {:noreply, push_navigate(socket, to: "/login")}
+    with_auth socket do
+      case Accounts.update_cart_item_quantity(item_id, String.to_integer(quantity)) do
+        {:ok, _} ->
+          case Accounts.get_cart_items(socket.assigns.current_user_id) do
+            {:ok, cart_items} ->
+              cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
+              total = calculate_total(cart_items)
+              {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Cart updated")}
+            {:error, _} ->
+              {:noreply, add_flash_timer(socket, :error, "Failed to update cart")}
+          end
+        {:error, _} ->
+          {:noreply, add_flash_timer(socket, :error, "Failed to update quantity")}
+      end
     end
   end
 
   @impl true
   def handle_event("remove-item", %{"item-id" => item_id}, socket) do
-    case Authentication.require_authentication(socket) do
-      {:ok, socket} ->
-        case Accounts.remove_from_cart(item_id) do
-          {:ok, _} ->
-            case Accounts.get_cart_items(socket.assigns.current_user_id) do
-              {:ok, cart_items} ->
-                cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
-                total = calculate_total(cart_items)
-                {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Item removed from cart")}
-              {:error, _} ->
-                {:noreply, add_flash_timer(socket, :error, "Failed to update cart")}
-            end
-          {:error, _} ->
-            {:noreply, add_flash_timer(socket, :error, "Failed to remove item")}
-        end
-      {:error, :redirect} ->
-        {:noreply, push_navigate(socket, to: "/login")}
+    with_auth socket do
+      case Accounts.remove_from_cart(item_id) do
+        {:ok, _} ->
+          case Accounts.get_cart_items(socket.assigns.current_user_id) do
+            {:ok, cart_items} ->
+              cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
+              total = calculate_total(cart_items)
+              {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Item removed from cart")}
+            {:error, _} ->
+              {:noreply, add_flash_timer(socket, :error, "Failed to update cart")}
+          end
+        {:error, _} ->
+          {:noreply, add_flash_timer(socket, :error, "Failed to remove item")}
+      end
     end
   end
 
   @impl true
   def handle_event("clear-cart", _params, socket) do
-    case Authentication.require_authentication(socket) do
-      {:ok, socket} ->
-        case Accounts.clear_cart(socket.assigns.current_user_id) do
-          {:ok, _} ->
-            {:noreply, assign(socket, cart_items: [], total: Decimal.new(0), cart_count: 0) |> add_flash_timer(:info, "Cart cleared")}
-          {:error, _} ->
-            {:noreply, add_flash_timer(socket, :error, "Failed to clear cart")}
-        end
-      {:error, :redirect} ->
-        {:noreply, push_navigate(socket, to: "/login")}
+    with_auth socket do
+      case Accounts.clear_cart(socket.assigns.current_user_id) do
+        {:ok, _} ->
+          {:noreply, assign(socket, cart_items: [], total: Decimal.new(0), cart_count: 0) |> add_flash_timer(:info, "Cart cleared")}
+        {:error, _} ->
+          {:noreply, add_flash_timer(socket, :error, "Failed to clear cart")}
+      end
     end
   end
 

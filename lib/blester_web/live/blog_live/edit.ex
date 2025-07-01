@@ -3,6 +3,7 @@ defmodule BlesterWeb.BlogLive.Edit do
   import BlesterWeb.LiveValidations
   alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
+  import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
@@ -27,17 +28,14 @@ defmodule BlesterWeb.BlogLive.Edit do
 
   @impl true
   def handle_event("save", %{"post" => post_params}, socket) do
-    case Authentication.require_authentication(socket) do
-      {:ok, socket} ->
-        case Accounts.update_post(socket.assigns.post_id, post_params) do
-          {:ok, post} ->
-            {:noreply, add_flash_timer(socket, :info, "Post updated successfully") |> push_navigate(to: "/blog/#{post.id}")}
-          {:error, changeset} ->
-            errors = format_errors(changeset.errors)
-            {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to update post")}
-        end
-      {:error, :redirect} ->
-        {:noreply, push_navigate(socket, to: "/login")}
+    with_auth socket do
+      case Accounts.update_post(socket.assigns.post_id, post_params) do
+        {:ok, post} ->
+          {:noreply, add_flash_timer(socket, :info, "Post updated successfully") |> push_navigate(to: "/blog/#{post.id}")}
+        {:error, changeset} ->
+          errors = format_errors(changeset.errors)
+          {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to update post")}
+      end
     end
   end
 

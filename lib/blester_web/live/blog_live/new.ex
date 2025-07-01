@@ -3,6 +3,7 @@ defmodule BlesterWeb.BlogLive.New do
   import BlesterWeb.LiveValidations
   alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
+  import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
 
   @impl true
   def mount(_params, session, socket) do
@@ -13,20 +14,17 @@ defmodule BlesterWeb.BlogLive.New do
 
   @impl true
   def handle_event("save", %{"post" => post_params}, socket) do
-    case Authentication.require_authentication(socket) do
-      {:ok, socket} ->
-        user_id = socket.assigns.current_user_id
-        post_params = Map.put(post_params, "author_id", user_id)
+    with_auth socket do
+      user_id = socket.assigns.current_user_id
+      post_params = Map.put(post_params, "author_id", user_id)
 
-        case Accounts.create_post(post_params) do
-          {:ok, post} ->
-            {:noreply, add_flash_timer(socket, :info, "Post created successfully") |> push_navigate(to: "/blog/#{post.id}")}
-          {:error, changeset} ->
-            errors = format_errors(changeset.errors)
-            {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to create post")}
-        end
-      {:error, :redirect} ->
-        {:noreply, push_navigate(socket, to: "/login")}
+      case Accounts.create_post(post_params) do
+        {:ok, post} ->
+          {:noreply, add_flash_timer(socket, :info, "Post created successfully") |> push_navigate(to: "/blog/#{post.id}")}
+        {:error, changeset} ->
+          errors = format_errors(changeset.errors)
+          {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to create post")}
+      end
     end
   end
 
