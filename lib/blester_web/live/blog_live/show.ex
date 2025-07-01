@@ -58,16 +58,24 @@ defmodule BlesterWeb.BlogLive.Show do
 
         case Accounts.create_comment(comment_params) do
           {:ok, _comment} ->
-            # Reload the post to get updated comments
+            # Reload the post and comments to get updated comments
             case Accounts.get_post(socket.assigns.post.id) do
               {:ok, updated_post} ->
-                {:noreply, assign(socket, post: updated_post, comment_content: "") |> add_flash_timer(:info, "Comment added successfully")}
+                case Accounts.get_comments_for_post(updated_post.id) do
+                  {:ok, comments} ->
+                    {:noreply,
+                      socket
+                      |> assign(post: updated_post, comments: comments, comment_content: "")
+                      |> put_flash(:info, "Comment added successfully!")}
+                  {:error, _} ->
+                    {:noreply, put_flash(socket, :error, "Failed to reload comments")}
+                end
               {:error, _} ->
-                {:noreply, add_flash_timer(socket, :error, "Failed to reload post")}
+                {:noreply, put_flash(socket, :error, "Failed to reload post")}
             end
           {:error, changeset} ->
             errors = format_errors(changeset.errors)
-            {:noreply, assign(socket, errors: errors) |> add_flash_timer(:error, "Failed to add comment")}
+            {:noreply, assign(socket, errors: errors) |> put_flash(:error, "Failed to add comment")}
         end
       {:error, :redirect} ->
         {:noreply, push_navigate(socket, to: "/login")}
