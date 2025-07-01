@@ -80,11 +80,10 @@ defmodule BlesterWeb.BlogLive.New do
                 name="post[content]"
                 id="content"
                 rows="12"
-                value={@post["content"]}
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Write your post content here..."
                 required
-              ></textarea>
+              ><%= @post["content"] %></textarea>
               <%= if @errors[:content] do %>
                 <p class="mt-1 text-sm text-red-600"><%= @errors[:content] %></p>
               <% end %>
