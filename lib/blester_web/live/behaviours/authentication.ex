@@ -92,4 +92,20 @@ defmodule BlesterWeb.LiveView.Authentication do
       end
     end)
   end
+
+  @doc """
+  Macro to wrap event handlers that require authentication in LiveViews.
+  Usage:
+    with_auth socket do
+      # your logic
+    end
+  """
+  defmacro with_auth(socket, do: block) do
+    quote do
+      case BlesterWeb.LiveView.Authentication.require_authentication(unquote(socket)) do
+        {:ok, socket} -> unquote(block)
+        {:error, :redirect} -> {:noreply, Phoenix.LiveView.push_navigate(unquote(socket), to: "/login")}
+      end
+    end
+  end
 end

@@ -3,6 +3,7 @@ defmodule BlesterWeb.BlogLive.Show do
   import BlesterWeb.LiveValidations
   alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
+  import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
@@ -51,64 +52,58 @@ defmodule BlesterWeb.BlogLive.Show do
 
   @impl true
   def handle_event("create-comment", %{"comment" => comment_params}, socket) do
-    case Authentication.require_authentication(socket) do
-      {:ok, socket} ->
-        comment_params = Map.put(comment_params, "author_id", socket.assigns.current_user_id)
-        comment_params = Map.put(comment_params, "post_id", socket.assigns.post.id)
+    with_auth socket do
+      comment_params = Map.put(comment_params, "author_id", socket.assigns.current_user_id)
+      comment_params = Map.put(comment_params, "post_id", socket.assigns.post.id)
 
-        case Accounts.create_comment(comment_params) do
-          {:ok, _comment} ->
-            # Reload the post and comments to get updated comments
-            case Accounts.get_post(socket.assigns.post.id) do
-              {:ok, updated_post} ->
-                case Accounts.get_comments_for_post(updated_post.id) do
-                  {:ok, comments} ->
-                    {:noreply,
-                      socket
-                      |> assign(post: updated_post, comments: comments, comment_content: "")
-                      |> put_flash(:info, "Comment added successfully!")}
-                  {:error, _} ->
-                    {:noreply, put_flash(socket, :error, "Failed to reload comments")}
-                end
-              {:error, _} ->
-                {:noreply, put_flash(socket, :error, "Failed to reload post")}
-            end
-          {:error, changeset} ->
-            errors = format_errors(changeset.errors)
-            {:noreply, assign(socket, errors: errors) |> put_flash(:error, "Failed to add comment")}
-        end
-      {:error, :redirect} ->
-        {:noreply, push_navigate(socket, to: "/login")}
+      case Accounts.create_comment(comment_params) do
+        {:ok, _comment} ->
+          # Reload the post and comments to get updated comments
+          case Accounts.get_post(socket.assigns.post.id) do
+            {:ok, updated_post} ->
+              case Accounts.get_comments_for_post(updated_post.id) do
+                {:ok, comments} ->
+                  {:noreply,
+                    socket
+                    |> assign(post: updated_post, comments: comments, comment_content: "")
+                    |> put_flash(:info, "Comment added successfully!")}
+                {:error, _} ->
+                  {:noreply, put_flash(socket, :error, "Failed to reload comments")}
+              end
+            {:error, _} ->
+              {:noreply, put_flash(socket, :error, "Failed to reload post")}
+          end
+        {:error, changeset} ->
+          errors = format_errors(changeset.errors)
+          {:noreply, assign(socket, errors: errors) |> put_flash(:error, "Failed to add comment")}
+      end
     end
   end
 
   @impl true
   def handle_event("delete-comment", %{"comment-id" => comment_id}, socket) do
-    case Authentication.require_authentication(socket) do
-      {:ok, socket} ->
-        case Accounts.get_comment(comment_id) do
-          {:ok, comment} ->
-            if comment.author_id == socket.assigns.current_user_id do
-              case Accounts.delete_comment(comment_id) do
-                {:ok, _} ->
-                  # Reload the post to get updated comments
-                  case Accounts.get_post(socket.assigns.post.id) do
-                    {:ok, updated_post} ->
-                      {:noreply, assign(socket, post: updated_post) |> add_flash_timer(:info, "Comment deleted successfully")}
-                    {:error, _} ->
-                      {:noreply, add_flash_timer(socket, :error, "Failed to reload post")}
-                  end
-                {:error, _} ->
-                  {:noreply, add_flash_timer(socket, :error, "Failed to delete comment")}
-              end
-            else
-              {:noreply, add_flash_timer(socket, :error, "Not authorized to delete this comment")}
+    with_auth socket do
+      case Accounts.get_comment(comment_id) do
+        {:ok, comment} ->
+          if comment.author_id == socket.assigns.current_user_id do
+            case Accounts.delete_comment(comment_id) do
+              {:ok, _} ->
+                # Reload the post to get updated comments
+                case Accounts.get_post(socket.assigns.post.id) do
+                  {:ok, updated_post} ->
+                    {:noreply, assign(socket, post: updated_post) |> add_flash_timer(:info, "Comment deleted successfully")}
+                  {:error, _} ->
+                    {:noreply, add_flash_timer(socket, :error, "Failed to reload post")}
+                end
+              {:error, _} ->
+                {:noreply, add_flash_timer(socket, :error, "Failed to delete comment")}
             end
-          {:error, _} ->
-            {:noreply, add_flash_timer(socket, :error, "Comment not found")}
-        end
-      {:error, :redirect} ->
-        {:noreply, push_navigate(socket, to: "/login")}
+          else
+            {:noreply, add_flash_timer(socket, :error, "Not authorized to delete this comment")}
+          end
+        {:error, _} ->
+          {:noreply, add_flash_timer(socket, :error, "Comment not found")}
+      end
     end
   end
 
@@ -119,25 +114,22 @@ defmodule BlesterWeb.BlogLive.Show do
 
   @impl true
   def handle_event("delete_post", %{"id" => id}, socket) do
-    case Authentication.require_authentication(socket) do
-      {:ok, socket} ->
-        post = socket.assigns.post
-        user = socket.assigns.current_user
-        if post && user && post.author_id == user.id do
-          case Accounts.delete_post(id) do
-            :ok ->
-              {:noreply,
-               socket
-               |> put_flash(:info, "Post deleted successfully.")
-               |> push_navigate(to: "/blog")}
-            {:error, _} ->
-              {:noreply, put_flash(socket, :error, "Failed to delete post.")}
-          end
-        else
-          {:noreply, put_flash(socket, :error, "Not authorized to delete this post.")}
+    with_auth socket do
+      post = socket.assigns.post
+      user = socket.assigns.current_user
+      if post && user && post.author_id == user.id do
+        case Accounts.delete_post(id) do
+          :ok ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Post deleted successfully.")
+             |> push_navigate(to: "/blog")}
+          {:error, _} ->
+            {:noreply, put_flash(socket, :error, "Failed to delete post.")}
         end
-      {:error, :redirect} ->
-        {:noreply, push_navigate(socket, to: "/login")}
+      else
+        {:noreply, put_flash(socket, :error, "Not authorized to delete this post.")}
+      end
     end
   end
 end
