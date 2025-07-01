@@ -162,10 +162,9 @@ defmodule BlesterWeb.AdminLive.Products.New do
                 name="product[description]"
                 id="description"
                 rows="4"
-                value={@product["description"]}
                 class={"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm #{if @errors["description"], do: "border-red-300", else: ""}"}
                 placeholder="Enter product description"
-              ></textarea>
+              ><%= @product["description"] %></textarea>
               <%= if @errors["description"] do %>
                 <p class="mt-1 text-sm text-red-600"><%= Enum.at(@errors["description"], 0) %></p>
               <% end %>
