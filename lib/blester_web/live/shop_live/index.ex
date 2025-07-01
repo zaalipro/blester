@@ -25,10 +25,7 @@ defmodule BlesterWeb.ShopLive.Index do
     search = Map.get(_params, "search", "")
 
     # Get categories for filter dropdown
-    categories = case Accounts.get_categories() do
-      {:ok, cats} -> cats
-      _ -> []
-    end
+    categories = Accounts.get_categories()
 
     # Get products using the paginated function
     case Accounts.list_products_paginated(per_page, offset, search, category) do
