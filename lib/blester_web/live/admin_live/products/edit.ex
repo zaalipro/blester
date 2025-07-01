@@ -86,8 +86,8 @@ defmodule BlesterWeb.AdminLive.Products.Edit do
     # Validate price format
     errors = if params["price"] != "" and params["price"] != nil do
       case Decimal.parse(params["price"]) do
-        {:ok, _} -> errors
-        :error -> Map.put(errors, "price", ["Price must be a valid number"])
+        {decimal, ""} when is_struct(decimal, Decimal) -> errors
+        _ -> Map.put(errors, "price", ["Price must be a valid number"])
       end
     else
       errors
