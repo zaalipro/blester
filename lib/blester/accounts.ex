@@ -2,6 +2,7 @@ defmodule Blester.Accounts do
   use Ash.Domain
 
   require Ash.Query
+  require Logger
 
   resources do
     resource Blester.Accounts.User
@@ -31,7 +32,9 @@ defmodule Blester.Accounts do
     # Apply additional filters
     final_query = Enum.reduce(additional_filters, search_query, fn {field, value}, acc ->
       if value != "" and value != "all" and is_atom(field) and is_binary(value) do
-        Ash.Query.filter(acc, [{field, ilike: value}])
+        filter = [{field, [ilike: "%#{value}%"]}]
+        Logger.debug("Applying Ash filter: #{inspect(filter)}")
+        Ash.Query.filter(acc, filter)
       else
         acc
       end
