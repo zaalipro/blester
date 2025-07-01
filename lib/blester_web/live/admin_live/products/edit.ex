@@ -61,11 +61,12 @@ defmodule BlesterWeb.AdminLive.Products.Edit do
 
   @impl true
   def handle_event("validate", %{"product" => product_params}, socket) do
-    case validate_product(product_params) do
+    merged_params = Map.merge(socket.assigns.product, product_params)
+    case validate_product(merged_params) do
       {:ok, _} ->
-        {:noreply, assign(socket, product: product_params, errors: %{})}
+        {:noreply, assign(socket, product: merged_params, errors: %{})}
       {:error, errors} ->
-        {:noreply, assign(socket, product: product_params, errors: errors)}
+        {:noreply, assign(socket, product: merged_params, errors: errors)}
     end
   end
 
