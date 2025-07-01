@@ -32,8 +32,8 @@ defmodule Blester.Accounts do
     # Apply additional filters
     final_query = Enum.reduce(additional_filters, search_query, fn {field, value}, acc ->
       if value != "" and value != "all" and is_atom(field) and is_binary(value) do
-        filter = [{field, [ilike: "%#{value}%"]}]
-        Logger.debug("Applying Ash filter: #{inspect(filter)}")
+        filter = [{field, value}]
+        Logger.debug("Applying Ash filter (exact match): #{inspect(filter)}")
         Ash.Query.filter(acc, filter)
       else
         acc
