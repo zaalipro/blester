@@ -33,9 +33,9 @@ defmodule BlesterWeb.ShopLive.Checkout do
   end
 
   @impl true
-  def handle_event("place-order", _params, socket) do
-    case Accounts.create_order_from_cart(socket.assigns.current_user_id) do
-      {:ok, order} ->
+  def handle_event("place_order", params, socket) do
+    case Accounts.create_order(socket.assigns.current_user_id, params) do
+      {:ok, _order} ->
         cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
         {:noreply, assign(socket, cart_count: cart_count) |> add_flash_timer(:info, "Order placed successfully!") |> push_navigate(to: "/shop")}
       {:error, _} ->
@@ -48,19 +48,8 @@ defmodule BlesterWeb.ShopLive.Checkout do
     {:noreply, clear_flash(socket)}
   end
 
-  def render(assigns) do
+  @impl true
+  def render(_assigns) do
     # ... existing code ...
-  end
-
-  defp calculate_total(cart_items) do
-    cart_items
-    |> Enum.reduce(Decimal.new(0), fn item, acc ->
-      item_total = Decimal.mult(item.product.price, item.quantity)
-      Decimal.add(acc, item_total)
-    end)
-  end
-
-  defp format_price(price) do
-    Decimal.to_string(price, :normal)
   end
 end

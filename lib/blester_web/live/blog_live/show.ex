@@ -1,9 +1,8 @@
 defmodule BlesterWeb.BlogLive.Show do
   use BlesterWeb, :live_view
-  import BlesterWeb.LiveValidations
   alias Blester.Accounts
-  alias BlesterWeb.LiveView.Authentication
   import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
+  import BlesterWeb.LiveValidations, only: [add_flash_timer: 3, format_errors: 1]
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
@@ -108,11 +107,6 @@ defmodule BlesterWeb.BlogLive.Show do
   end
 
   @impl true
-  def handle_info(:clear_flash, socket) do
-    {:noreply, clear_flash(socket)}
-  end
-
-  @impl true
   def handle_event("delete_post", %{"id" => id}, socket) do
     with_auth socket do
       post = socket.assigns.post
@@ -131,5 +125,10 @@ defmodule BlesterWeb.BlogLive.Show do
         {:noreply, put_flash(socket, :error, "Not authorized to delete this post.")}
       end
     end
+  end
+
+  @impl true
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
   end
 end

@@ -79,13 +79,9 @@ defmodule BlesterWeb.AdminLive.Products.New do
     errors = if params["category"] == "" or params["category"] == nil, do: Map.put(errors, "category", ["Category is required"]), else: errors
 
     # Validate price format
-    errors = if params["price"] != "" and params["price"] != nil do
-      case Decimal.parse(params["price"]) do
-        {:ok, _} -> errors
-        :error -> Map.put(errors, "price", ["Price must be a valid number"])
-      end
-    else
-      errors
+    case Decimal.parse(params["price"]) do
+      :error -> Map.put(errors, "price", ["Price must be a valid number"])
+      _ -> errors
     end
 
     # Validate stock quantity
@@ -113,6 +109,7 @@ defmodule BlesterWeb.AdminLive.Products.New do
     end)
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="min-h-screen bg-gray-50">

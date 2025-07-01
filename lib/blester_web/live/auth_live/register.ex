@@ -36,7 +36,7 @@ defmodule BlesterWeb.AuthLive.Register do
     user_params = Map.delete(user_params, "password_confirmation")
 
     case Accounts.create_user(user_params) do
-      {:ok, user} ->
+      {:ok, _user} ->
         {:noreply,
          socket
          |> put_flash(:info, "Account created successfully! Please log in.")

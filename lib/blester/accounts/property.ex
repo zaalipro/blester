@@ -50,7 +50,7 @@ defmodule Blester.Accounts.Property do
     create :create do
       accept [:title, :description, :price, :bedrooms, :bathrooms, :square_feet,
               :address, :city, :state, :zip_code, :property_type, :listing_date,
-              :images, :virtual_tour_url, :latitude, :longitude, :amenities, :agent_id, :owner_id]
+              :images, :virtual_tour_url, :latitude, :longitude, :amenities, :agent_id, :owner_id, :status]
     end
 
     update :update do

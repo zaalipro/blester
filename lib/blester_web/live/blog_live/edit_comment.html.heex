@@ -17,10 +17,9 @@
             name="comment[content]"
             id="comment_content"
             rows="6"
-            value={@comment["content"]}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
-          ></textarea>
+          ><%= @comment["content"] %></textarea>
           <%= if @errors && @errors["content"] do %>
             <p class="text-red-600 text-sm mt-1"><%= List.first(@errors["content"]) %></p>
           <% end %>

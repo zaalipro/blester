@@ -119,6 +119,7 @@ defmodule BlesterWeb.AdminLive.Products.Edit do
     end)
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="min-h-screen bg-gray-50">

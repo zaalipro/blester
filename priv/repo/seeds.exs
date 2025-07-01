@@ -303,8 +303,35 @@ products_data = [
   }
 ]
 
+# --- SEED CATEGORIES BASED ON PRODUCTS ---
+# Extract unique categories from products_data
+category_names = products_data |> Enum.map(& &1.category) |> Enum.uniq()
+
+# Create or fetch categories and build a map of name => id
+category_map =
+  Enum.reduce(category_names, %{}, fn name, acc ->
+    case Accounts.create_category(%{name: name}) do
+      {:ok, category} -> Map.put(acc, name, category.id)
+      {:error, _} ->
+        # Try to fetch existing category if creation failed (e.g., already exists)
+        case Repo.one(Ecto.Query.from(c in Blester.Accounts.Category, where: c.name == ^name, select: c)) do
+          nil -> acc
+          category -> Map.put(acc, name, category.id)
+        end
+    end
+  end)
+
+# --- UPDATE PRODUCTS TO USE CATEGORY_ID ---
+products_data_with_category_id =
+  Enum.map(products_data, fn product ->
+    category_id = Map.get(category_map, product.category)
+    product
+    |> Map.delete(:category)
+    |> Map.put(:category_id, category_id)
+  end)
+
 # Create products
-Enum.each(products_data, fn product_data ->
+Enum.each(products_data_with_category_id, fn product_data ->
   case Accounts.create_product(product_data) do
     {:ok, product} ->
       IO.puts("Product created: #{product.name}")

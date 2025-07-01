@@ -1,7 +1,7 @@
 defmodule BlesterWeb.AdminLive.Products do
   use BlesterWeb, :live_view
-  import BlesterWeb.LiveValidations
   alias Blester.Accounts
+  import BlesterWeb.LiveValidations, only: [add_flash_timer: 3]
 
   @impl true
   def mount(_params, session, socket) do
@@ -100,6 +100,7 @@ defmodule BlesterWeb.AdminLive.Products do
     Decimal.to_string(price, :normal)
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="min-h-screen bg-gray-50">

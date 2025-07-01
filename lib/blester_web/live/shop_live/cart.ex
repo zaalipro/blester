@@ -1,13 +1,13 @@
 defmodule BlesterWeb.ShopLive.Cart do
   use BlesterWeb, :live_view
-  import BlesterWeb.LiveValidations
   alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
   import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
+  import BlesterWeb.LiveValidations, only: [add_flash_timer: 3]
 
   @impl true
-  def mount(_params, session, socket) do
-    Authentication.mount_authenticated(_params, session, socket, fn _params, socket ->
+  def mount(params, session, socket) do
+    Authentication.mount_authenticated(params, session, socket, fn _params, socket ->
       case Accounts.get_cart_items(socket.assigns.current_user_id) do
         {:ok, cart_items} ->
           total = calculate_total(cart_items)
@@ -110,9 +110,9 @@ defmodule BlesterWeb.ShopLive.Cart do
                   </div>
                   <div class="flex-1 min-w-0">
                     <h3 class="text-lg font-medium text-gray-900">
-                      <%= live_patch item.product.name,
-                          to: "/shop/#{item.product.id}",
-                          class: "hover:text-blue-600" %>
+                      <.link navigate={"/shop/#{item.product.id}"} class="hover:text-blue-600">
+                        <%= item.product.name %>
+                      </.link>
                     </h3>
                     <p class="text-sm text-gray-500"><%= item.product.description %></p>
                     <p class="text-lg font-semibold text-gray-900">$<%= format_price(item.product.price) %></p>
@@ -155,12 +155,8 @@ defmodule BlesterWeb.ShopLive.Cart do
                 <div class="text-right">
                   <p class="text-lg font-semibold text-gray-900">Total: $<%= format_price(@total) %></p>
                   <div class="mt-4 space-x-4">
-                    <%= live_patch "Continue Shopping",
-                        to: "/shop",
-                        class: "btn btn-secondary" %>
-                    <%= live_patch "Proceed to Checkout",
-                        to: "/checkout",
-                        class: "btn btn-primary" %>
+                    <.link navigate="/shop" class="btn btn-secondary">Continue Shopping</.link>
+                    <.link navigate="/checkout" class="btn btn-primary">Proceed to Checkout</.link>
                   </div>
                 </div>
               </div>
@@ -174,9 +170,7 @@ defmodule BlesterWeb.ShopLive.Cart do
               </div>
               <h3 class="text-lg font-medium text-gray-900 mb-2">Your cart is empty</h3>
               <p class="text-gray-500 mb-6">Start shopping to add items to your cart.</p>
-              <%= live_patch "Start Shopping",
-                  to: "/shop",
-                  class: "btn btn-primary" %>
+              <.link navigate="/shop" class="btn btn-primary">Start Shopping</.link>
             </div>
           <% end %>
         </div>

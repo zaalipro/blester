@@ -3,7 +3,7 @@ defmodule BlesterWeb.LiveValidations do
   Shared validation functions for LiveView components.
   """
 
-  import Phoenix.LiveView, only: [put_flash: 3, clear_flash: 2]
+  import Phoenix.LiveView, only: [put_flash: 3]
 
   @doc """
   Validates user parameters for login/registration.

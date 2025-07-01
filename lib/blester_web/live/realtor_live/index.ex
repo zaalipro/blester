@@ -64,7 +64,11 @@ defmodule BlesterWeb.RealtorLive.Index do
 
   @impl true
   def handle_event("filter", %{"filters" => filters}, socket) do
-    socket = assign(socket, filters: filters, current_page: 1)
+    # Ensure all expected keys are present
+    merged_filters =
+      @default_filters
+      |> Map.merge(for {k, v} <- filters, into: %{}, do: {String.to_atom(k), v})
+    socket = assign(socket, filters: merged_filters, current_page: 1)
     socket = load_properties(socket)
     {:noreply, socket}
   end
@@ -131,44 +135,6 @@ defmodule BlesterWeb.RealtorLive.Index do
     end
   end
 
-  defp load_filter_options(socket) do
-    # Load cities and states for filter dropdowns
-    cities = get_unique_cities()
-    states = get_unique_states()
-
-    assign(socket, cities: cities, states: states)
-  end
-
-  defp get_unique_cities do
-    Accounts.Property
-    |> Ash.Query.filter(status: "active")
-    |> Ash.Query.select([:city])
-    |> Ash.read()
-    |> case do
-      {:ok, properties} ->
-        properties
-        |> Enum.map(& &1.city)
-        |> Enum.uniq()
-        |> Enum.sort()
-      _ -> []
-    end
-  end
-
-  defp get_unique_states do
-    Accounts.Property
-    |> Ash.Query.filter(status: "active")
-    |> Ash.Query.select([:state])
-    |> Ash.read()
-    |> case do
-      {:ok, properties} ->
-        properties
-        |> Enum.map(& &1.state)
-        |> Enum.uniq()
-        |> Enum.sort()
-      _ -> []
-    end
-  end
-
   defp toggle_favorite(user_id, property_id) do
     # Check if favorite exists
     existing_favorite = Accounts.Favorite
@@ -230,4 +196,15 @@ defmodule BlesterWeb.RealtorLive.Index do
       false
     end
   end
+
+  @default_filters %{
+    property_type: "all",
+    min_price: "",
+    max_price: "",
+    bedrooms: "all",
+    bathrooms: "all",
+    city: "all",
+    state: "all",
+    status: "all"
+  }
 end

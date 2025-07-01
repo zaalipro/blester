@@ -1,12 +1,11 @@
 defmodule BlesterWeb.AdminLive.Dashboard do
   use BlesterWeb, :live_view
-  import BlesterWeb.LiveValidations
   alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
 
   @impl true
-  def mount(_params, session, socket) do
-    Authentication.mount_admin(_params, session, socket, fn _params, socket ->
+  def mount(params, session, socket) do
+    Authentication.mount_admin(params, session, socket, fn _params, socket ->
       {:ok, assign(socket, stats: load_admin_stats())}
     end)
   end

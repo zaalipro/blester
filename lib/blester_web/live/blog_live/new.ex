@@ -6,8 +6,8 @@ defmodule BlesterWeb.BlogLive.New do
   import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
 
   @impl true
-  def mount(_params, session, socket) do
-    Authentication.mount_authenticated(_params, session, socket, fn _params, socket ->
+  def mount(params, session, socket) do
+    Authentication.mount_authenticated(params, session, socket, fn _params, socket ->
       {:ok, assign(socket, post: %{}, errors: %{})}
     end)
   end

@@ -16,18 +16,18 @@ defmodule Blester.Accounts.Product do
     attribute :description, :string, allow_nil?: false
     attribute :price, :decimal, allow_nil?: false
     attribute :image_url, :string, allow_nil?: false
-    attribute :category, :string, allow_nil?: false
     attribute :stock_quantity, :integer, allow_nil?: false, default: 0
     attribute :sku, :string, allow_nil?: false
     attribute :is_active, :boolean, allow_nil?: false, default: true
     attribute :status, :string, allow_nil?: false, default: "active"
+    attribute :category_id, :uuid, allow_nil?: false
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
 
   # Validations
   validations do
-    validate present([:name, :description, :price, :image_url, :category, :sku])
+    validate present([:name, :description, :price, :image_url, :category_id, :sku])
   end
 
   identities do
@@ -35,17 +35,18 @@ defmodule Blester.Accounts.Product do
   end
 
   relationships do
+    belongs_to :category, Blester.Accounts.Category
     has_many :cart_items, Blester.Accounts.CartItem, destination_attribute: :product_id
     has_many :order_items, Blester.Accounts.OrderItem, destination_attribute: :product_id
   end
 
   actions do
     create :create do
-      accept [:name, :description, :price, :image_url, :category, :stock_quantity, :sku, :is_active, :status]
+      accept [:name, :description, :price, :image_url, :category_id, :stock_quantity, :sku, :is_active, :status]
     end
 
     update :update do
-      accept [:name, :description, :price, :image_url, :category, :stock_quantity, :sku, :is_active, :status]
+      accept [:name, :description, :price, :image_url, :category_id, :stock_quantity, :sku, :is_active, :status]
     end
 
     defaults [:read, :destroy]

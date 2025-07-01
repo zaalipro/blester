@@ -102,6 +102,7 @@ defmodule BlesterWeb.AdminLive.Orders do
     Decimal.to_string(price, :normal)
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="min-h-screen bg-gray-50">

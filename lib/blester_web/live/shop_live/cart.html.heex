@@ -31,9 +31,7 @@
                     <!-- Product Info -->
                     <div class="flex-1 min-w-0">
                       <h3 class="text-lg font-medium text-gray-900 mb-1">
-                        <%= live_patch item.product.name, 
-                            to: "/shop/#{item.product.id}",
-                            class: "hover:text-blue-600" %>
+                        <.link navigate={"/shop/#{item.product.id}"} class="text-blue-600 hover:underline"><%= item.product.name %></.link>
                       </h3>
                       <p class="text-sm text-gray-600 mb-2"><%= item.product.category %></p>
                       <p class="text-lg font-bold text-blue-600">$<%= format_price(item.product.price) %></p>
@@ -116,17 +114,10 @@
               </div>
             </div>
             
-            <button 
-              phx-click="proceed-to-checkout"
-              class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Proceed to Checkout
-            </button>
+            <.link navigate="/shop/checkout" class="btn btn-primary">Proceed to Checkout</.link>
             
             <div class="mt-4 text-center">
-              <%= live_patch "Continue Shopping", 
-                  to: "/shop",
-                  class: "text-blue-600 hover:text-blue-800 font-medium" %>
+              <.link navigate="/shop" class="text-blue-600 hover:text-blue-800 font-medium">Continue Shopping</.link>
             </div>
           </div>
         </div>
@@ -141,9 +132,7 @@
         </div>
         <h2 class="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h2>
         <p class="text-gray-600 mb-8">Looks like you haven't added any items to your cart yet.</p>
-        <%= live_patch "Start Shopping", 
-            to: "/shop",
-            class: "bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors" %>
+        <.link navigate="/shop" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">Start Shopping</.link>
       </div>
     <% end %>
   </div>

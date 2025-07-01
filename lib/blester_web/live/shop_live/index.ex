@@ -1,10 +1,9 @@
 defmodule BlesterWeb.ShopLive.Index do
   use BlesterWeb, :live_view
-  import BlesterWeb.LiveValidations
   alias Blester.Accounts
 
   @impl true
-  def mount(_params, session, socket) do
+  def mount(params, session, socket) do
     user_id = session["user_id"]
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
     current_user = case user_id do
@@ -16,13 +15,13 @@ defmodule BlesterWeb.ShopLive.Index do
     end
 
     # Get products with pagination
-    page = String.to_integer(Map.get(_params, "page", "1"))
+    page = String.to_integer(Map.get(params, "page", "1"))
     per_page = 12
     offset = (page - 1) * per_page
 
     # Get category filter
-    category = Map.get(_params, "category", "")
-    search = Map.get(_params, "search", "")
+    category = Map.get(params, "category", "")
+    search = Map.get(params, "search", "")
 
     # Get categories for filter dropdown
     categories = Accounts.get_categories()

@@ -16,37 +16,36 @@ defmodule Blester.Accounts do
     resource Blester.Accounts.Favorite
     resource Blester.Accounts.Inquiry
     resource Blester.Accounts.Viewing
+    resource Blester.Accounts.Category
   end
 
   # Generic pagination helper
-  defp paginate_query(query, limit, offset, search_filters \\ [], additional_filters \\ []) do
-    # Apply search filters
-    search_query = Enum.reduce(search_filters, query, fn {field, search}, acc ->
-      if search != "" and search != "all" do
-        Ash.Query.filter(acc, [{field, [ilike: "%#{search}%"]}])
-      else
-        acc
-      end
-    end)
+  defp paginate_query(query, limit, offset, search_filters, additional_filters) do
+    # Build a single filter map from search and additional filters
+    filters =
+      search_filters ++ additional_filters
+      |> Enum.reject(fn {_field, value} -> value == "" or value == "all" end)
+      |> Enum.map(fn
+        {field, value} when is_atom(field) and is_binary(value) ->
+          if String.ends_with?(Atom.to_string(field), "_id") do
+            case Ecto.UUID.cast(value) do
+              {:ok, uuid} -> {field, uuid}
+              :error -> nil
+            end
+          else
+            {field, [ilike: "%#{value}%"]}
+          end
+        _ -> nil
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.into(%{})
 
-    # Log all distinct categories for debugging
-    {:ok, categories} = Blester.Repo.query("SELECT DISTINCT category FROM products WHERE is_active = true")
-    Logger.debug("Distinct categories in DB: #{inspect(categories.rows)}")
-
-    # Apply additional filters
-    final_query = Enum.reduce(additional_filters, search_query, fn {field, value}, acc ->
-      if value != "" and value != "all" and is_atom(field) and is_binary(value) do
-        filter = [{field, [ilike: value]}]
-        Logger.debug("Applying Ash filter: #{inspect(filter)}")
-        Ash.Query.filter(acc, filter)
-      else
-        acc
-      end
-    end)
+    # Apply all filters at once
+    filtered_query = if map_size(filters) > 0, do: Ash.Query.filter(query, filters), else: query
 
     # Get total count
     total_count =
-      final_query
+      filtered_query
       |> Ash.count()
       |> case do
         {:ok, count} -> count
@@ -54,7 +53,7 @@ defmodule Blester.Accounts do
       end
 
     # Get paginated results
-    paginated_query = final_query
+    paginated_query = filtered_query
     |> Ash.Query.sort(inserted_at: :desc)
     |> Ash.Query.limit(limit)
     |> Ash.Query.offset(offset)
@@ -337,22 +336,34 @@ defmodule Blester.Accounts do
   def list_products_paginated(limit, offset, search \\ "", category \\ "") do
     base_query = Blester.Accounts.Product
     |> Ash.Query.filter(is_active: true)
+    |> Ash.Query.load(:category)
 
     search_filters = if search != "", do: [{:name, search}], else: []
-    additional_filters = if category != "", do: [{:category, category}], else: []
 
-    paginate_query(base_query, limit, offset, search_filters, additional_filters)
+    # If a category is provided, look up its id and filter by category_id
+    additional_filters =
+      if category != "" do
+        case Blester.Accounts.Category |> Ash.Query.filter(name: category) |> Ash.read_one() do
+          {:ok, %Blester.Accounts.Category{id: category_id}} -> [{:category_id, category_id}]
+          _ -> []
+        end
+      else
+        []
+      end
+
+    result = paginate_query(base_query, limit, offset, search_filters, additional_filters)
+    require Logger
+    Logger.debug("Products returned for category '#{category}': #{inspect(result)}")
+    result
   end
 
   def get_categories do
-    Blester.Accounts.Product
-    |> Ash.Query.filter(is_active: true)
-    |> Ash.Query.select([:category])
+    Blester.Accounts.Category
     |> Ash.read()
     |> case do
-      {:ok, products} ->
-        products
-        |> Enum.map(& &1.category)
+      {:ok, categories} ->
+        categories
+        |> Enum.map(& &1.name)
         |> Enum.uniq()
         |> Enum.sort()
       _ ->
@@ -683,46 +694,24 @@ defmodule Blester.Accounts do
   end
 
   defp apply_property_filters(query, filters) do
-    Enum.reduce(filters, query, fn {key, value}, acc ->
-      case {key, value} do
-        {"property_type", value} when value != "all" and value != "" ->
-          Ash.Query.filter(acc, property_type: value)
-
-        {"min_price", value} when value != "" ->
-          case Decimal.parse(value) do
-            {:ok, price} -> Ash.Query.filter(acc, price: [gte: price])
-            _ -> acc
-          end
-
-        {"max_price", value} when value != "" ->
-          case Decimal.parse(value) do
-            {:ok, price} -> Ash.Query.filter(acc, price: [lte: price])
-            _ -> acc
-          end
-
-        {"bedrooms", value} when value != "all" and value != "" ->
-          case Integer.parse(value) do
-            {beds, _} -> Ash.Query.filter(acc, bedrooms: beds)
-            _ -> acc
-          end
-
-        {"bathrooms", value} when value != "all" and value != "" ->
-          case Integer.parse(value) do
-            {baths, _} -> Ash.Query.filter(acc, bathrooms: baths)
-            _ -> acc
-          end
-
-        {"city", value} when value != "all" and value != "" ->
-          Ash.Query.filter(acc, city: value)
-
-        {"state", value} when value != "all" and value != "" ->
-          Ash.Query.filter(acc, state: value)
-
-        {"status", value} when value != "all" and value != "" ->
-          Ash.Query.filter(acc, status: value)
-
-        _ -> acc
-      end
+    Enum.reduce(filters, query, fn
+      {key, value}, acc ->
+        string_value = to_string(value)
+        cond do
+          string_value in ["", "all"] -> acc
+          key == :min_price ->
+            case Decimal.parse(value) do
+              :error -> acc
+              {price, _} -> Ash.Query.filter(acc, price: [gte: price])
+            end
+          key == :max_price ->
+            case Decimal.parse(value) do
+              :error -> acc
+              {price, _} -> Ash.Query.filter(acc, price: [lte: price])
+            end
+          true ->
+            Ash.Query.filter(acc, [{String.to_existing_atom(to_string(key)), value}])
+        end
     end)
   end
 
@@ -847,5 +836,19 @@ defmodule Blester.Accounts do
 
   def update_viewing_status(id, status) do
     update_resource(Blester.Accounts.Viewing, id, %{status: status}, :viewing_not_found)
+  end
+
+  def create_category(attrs) do
+    # Convert string keys to atoms for consistency
+    attrs = for {key, val} <- attrs, into: %{} do
+      case key do
+        key when is_binary(key) -> {String.to_existing_atom(key), val}
+        key when is_atom(key) -> {key, val}
+      end
+    end
+
+    Blester.Accounts.Category
+    |> Ash.Changeset.for_create(:create, attrs)
+    |> Ash.create()
   end
 end
