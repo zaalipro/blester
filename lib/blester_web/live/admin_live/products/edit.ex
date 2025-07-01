@@ -222,15 +222,14 @@ defmodule BlesterWeb.AdminLive.Products.Edit do
                 <select
                   name="product[category]"
                   id="category"
-                  value={@product["category"]}
                   class={"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm #{if @errors["category"], do: "border-red-300", else: ""}"}
                 >
-                  <option value="">Select a category</option>
-                  <option value="electronics">Electronics</option>
-                  <option value="clothing">Clothing</option>
-                  <option value="books">Books</option>
-                  <option value="home">Home & Garden</option>
-                  <option value="sports">Sports</option>
+                  <option value="" <%= if @product["category"] == "", do: "selected" %>>Select a category</option>
+                  <option value="electronics" <%= if @product["category"] == "electronics", do: "selected" %>>Electronics</option>
+                  <option value="clothing" <%= if @product["category"] == "clothing", do: "selected" %>>Clothing</option>
+                  <option value="books" <%= if @product["category"] == "books", do: "selected" %>>Books</option>
+                  <option value="home" <%= if @product["category"] == "home", do: "selected" %>>Home & Garden</option>
+                  <option value="sports" <%= if @product["category"] == "sports", do: "selected" %>>Sports</option>
                 </select>
                 <%= if @errors["category"] do %>
                   <p class="mt-1 text-sm text-red-600"><%= Enum.at(@errors["category"], 0) %></p>
@@ -242,12 +241,11 @@ defmodule BlesterWeb.AdminLive.Products.Edit do
                 <select
                   name="product[status]"
                   id="status"
-                  value={@product["status"]}
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="draft">Draft</option>
+                  <option value="active" <%= if @product["status"] == "active", do: "selected" %>>Active</option>
+                  <option value="inactive" <%= if @product["status"] == "inactive", do: "selected" %>>Inactive</option>
+                  <option value="draft" <%= if @product["status"] == "draft", do: "selected" %>>Draft</option>
                 </select>
               </div>
             </div>
