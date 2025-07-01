@@ -24,7 +24,6 @@ config :blester, BlesterWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4000],
   check_origin: false,
   code_reloader: true,
-  debug_errors: true,
   secret_key_base: "MBYM3LzuxSVOHfQ76nIMuKukSZa9WWBsGOjksJWXEUeIMzvBe+uhtE4cCTq5eiMV",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:blester, ~w(--sourcemap=inline --watch)]},
@@ -78,8 +77,6 @@ config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime
 
 config :phoenix_live_view,
-  # Include HEEx debug annotations as HTML comments in rendered markup
-  debug_heex_annotations: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
 

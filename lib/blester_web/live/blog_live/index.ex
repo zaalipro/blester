@@ -5,12 +5,7 @@ defmodule BlesterWeb.BlogLive.Index do
 
   @impl true
   def mount(params, session, socket) do
-    # Debug: Log session and assigns
-    IO.inspect(session, label: "Session in BlogLive.Index")
-
     user_id = session["user_id"]
-    IO.inspect(user_id, label: "User ID from session")
-
     cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
     current_user = case user_id do
       nil -> nil
@@ -19,8 +14,6 @@ defmodule BlesterWeb.BlogLive.Index do
         _ -> nil
       end
     end
-
-    IO.inspect(current_user, label: "Current user")
 
     # Get posts with pagination and search
     page = String.to_integer(Map.get(params, "page", "1"))
@@ -32,11 +25,9 @@ defmodule BlesterWeb.BlogLive.Index do
       {:ok, {posts, total_count}} ->
         total_pages = ceil(total_count / per_page)
         socket = assign(socket, posts: posts, errors: %{}, current_user_id: user_id, current_user: current_user, cart_count: cart_count, total_pages: total_pages, total_count: total_count, current_page: page, search: search)
-        IO.inspect(socket.assigns, label: "Socket assigns after mount")
         {:ok, socket}
       _ ->
         socket = assign(socket, posts: [], errors: %{}, current_user_id: user_id, current_user: current_user, cart_count: cart_count, total_pages: 0, total_count: 0, current_page: page, search: search)
-        IO.inspect(socket.assigns, label: "Socket assigns after mount (error case)")
         {:ok, socket}
     end
   end
