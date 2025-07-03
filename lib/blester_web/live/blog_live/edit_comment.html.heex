@@ -1,6 +1,6 @@
 <div class="container mx-auto px-4 py-8">
   <div class="max-w-2xl mx-auto">
-    <%= if @comment && @post do %>
+    <div :if={@comment && @post}>
       <div class="mb-8">
         <a href={"/blog/#{@post.id}"} class="text-blue-600 hover:text-blue-800">
           ← Back to Post
@@ -19,10 +19,10 @@
             rows="6"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
-          ><%= @comment["content"] %></textarea>
-          <%= if @errors && @errors["content"] do %>
-            <p class="text-red-600 text-sm mt-1"><%= List.first(@errors["content"]) %></p>
-          <% end %>
+          >{@comment["content"]}</textarea>
+          <div :if={@errors && @errors["content"]}>
+            <p class="text-red-600 text-sm mt-1">{List.first(@errors["content"])}</p>
+          </div>
         </div>
 
         <div class="flex space-x-4">
@@ -34,6 +34,6 @@
           </a>
         </div>
       </form>
-    <% end %>
+    </div>
   </div>
 </div> 

@@ -50,9 +50,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
               <select name="filters[property_type]" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="all">All Types</option>
-                <%= for type <- @property_types do %>
-                  <option value={type} selected={@filters.property_type == type}><%= type %></option>
-                <% end %>
+                <option :for={type <- @property_types} value={type} selected={@filters.property_type == type}>{type}</option>
               </select>
             </div>
 
@@ -82,9 +80,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
               <select name="filters[bedrooms]" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="all">Any</option>
-                <%= for beds <- 1..5 do %>
-                  <option value={beds} selected={@filters.bedrooms == Integer.to_string(beds)}><%= beds %>+</option>
-                <% end %>
+                <option :for={beds <- 1..5} value={beds} selected={@filters.bedrooms == Integer.to_string(beds)}>{beds}+</option>
               </select>
             </div>
 
@@ -93,9 +89,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
               <select name="filters[bathrooms]" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="all">Any</option>
-                <%= for baths <- 1..4 do %>
-                  <option value={baths} selected={@filters.bathrooms == Integer.to_string(baths)}><%= baths %>+</option>
-                <% end %>
+                <option :for={baths <- 1..4} value={baths} selected={@filters.bathrooms == Integer.to_string(baths)}>{baths}+</option>
               </select>
             </div>
 
@@ -104,9 +98,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
               <select name="filters[city]" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="all">All Cities</option>
-                <%= for city <- @cities do %>
-                  <option value={city} selected={@filters.city == city}><%= city %></option>
-                <% end %>
+                <option :for={city <- @cities} value={city} selected={@filters.city == city}>{city}</option>
               </select>
             </div>
 
@@ -115,9 +107,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
               <select name="filters[state]" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="all">All States</option>
-                <%= for state <- @states do %>
-                  <option value={state} selected={@filters.state == state}><%= state %></option>
-                <% end %>
+                <option :for={state <- @states} value={state} selected={@filters.state == state}>{state}</option>
               </select>
             </div>
           </form>
@@ -130,8 +120,8 @@
         <div class="flex items-center justify-between mb-6">
           <div>
             <p class="text-gray-600">
-              Showing <span class="font-semibold"><%= length(@properties) %></span> of 
-              <span class="font-semibold"><%= @total_count %></span> properties
+              Showing <span class="font-semibold">{length(@properties)}</span> of 
+              <span class="font-semibold">{@total_count}</span> properties
             </p>
           </div>
           <div class="flex items-center space-x-2">
@@ -145,9 +135,9 @@
         </div>
 
         <!-- Loading State -->
-        <%= if @loading do %>
+        <div :if={@loading}>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <%= for _i <- 1..6 do %>
+            <div :for={_i <- 1..6}>
               <div class="bg-white rounded-lg shadow-sm border animate-pulse">
                 <div class="h-48 bg-gray-200 rounded-t-lg"></div>
                 <div class="p-4">
@@ -156,159 +146,162 @@
                   <div class="h-3 bg-gray-200 rounded w-2/3"></div>
                 </div>
               </div>
-            <% end %>
+            </div>
           </div>
-        <% else %>
-          <!-- Properties Grid -->
-          <%= if length(@properties) > 0 do %>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <%= for property <- @properties do %>
-                <div class="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-200">
-                  <!-- Property Image -->
-                  <div class="relative h-48 bg-gray-200 rounded-t-lg overflow-hidden">
-                    <%= if length(property.images) > 0 do %>
-                      <img src={List.first(property.images)} alt={property.title} class="w-full h-full object-cover" />
-                    <% else %>
-                      <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
-                        <svg class="h-12 w-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                      </div>
-                    <% end %>
-                    
-                    <!-- Favorite Button -->
-                    <button
-                      phx-click="toggle_favorite"
-                      phx-value-property_id={property.id}
-                      class="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <%= if is_favorite(property.id, @current_user_id) do %>
-                        <svg class="h-5 w-5 text-red-500 fill-current" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                        </svg>
-                      <% else %>
-                        <svg class="h-5 w-5 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                      <% end %>
-                    </button>
+        </div>
 
-                    <!-- Property Type Badge -->
-                    <div class="absolute top-3 left-3">
-                      <span class="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-full">
-                        <%= property.property_type %>
-                      </span>
+        <!-- Properties Grid -->
+        <div :if={length(@properties) > 0}>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div :for={property <- @properties}>
+              <div class="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-200">
+                <!-- Property Image -->
+                <div class="relative h-48 bg-gray-200 rounded-t-lg overflow-hidden">
+                  <div :if={length(property.images) > 0}>
+                    <img src={List.first(property.images)} alt={property.title} class="w-full h-full object-cover" />
+                  </div>
+                  <div :if={length(property.images) == 0}>
+                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
+                      <svg class="h-12 w-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
                     </div>
                   </div>
-
-                  <!-- Property Details -->
-                  <div class="p-4">
-                    <div class="flex items-start justify-between mb-2">
-                      <h3 class="text-lg font-semibold text-gray-900 line-clamp-1">
-                        <%= property.title %>
-                      </h3>
+                  
+                  <!-- Favorite Button -->
+                  <button
+                    phx-click="toggle_favorite"
+                    phx-value-property_id={property.id}
+                    class="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <div :if={is_favorite(property.id, @current_user_id)}>
+                      <svg class="h-5 w-5 text-red-500 fill-current" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                      </svg>
                     </div>
-                    
-                    <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                      <%= property.address %>, <%= property.city %>, <%= property.state %>
-                    </p>
-
-                    <!-- Property Stats -->
-                    <div class="flex items-center space-x-4 mb-3 text-sm text-gray-500">
-                      <div class="flex items-center">
-                        <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                        </svg>
-                        <%= property.bedrooms %> beds
-                      </div>
-                      <div class="flex items-center">
-                        <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8" />
-                        </svg>
-                        <%= property.bathrooms %> baths
-                      </div>
-                      <div class="flex items-center">
-                        <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                        </svg>
-                        <%= format_square_feet(property.square_feet) %> sqft
-                      </div>
+                    <div :if={!is_favorite(property.id, @current_user_id)}>
+                      <svg class="h-5 w-5 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
                     </div>
+                  </button>
 
-                    <!-- Price -->
-                    <div class="flex items-center justify-between">
-                      <div class="text-xl font-bold text-gray-900">
-                        <%= format_price(property.price) %>
-                      </div>
-                      <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200">
-                        View Details
-                      </button>
-                    </div>
+                  <!-- Property Type Badge -->
+                  <div class="absolute top-3 left-3">
+                    <span class="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-full">
+                      <div class="text-2xl font-bold text-gray-900">{property.property_type}</div>
+                    </span>
                   </div>
                 </div>
-              <% end %>
-            </div>
 
-            <!-- Pagination -->
-            <%= if @total_pages > 1 do %>
-              <div class="mt-8 flex items-center justify-center">
-                <nav class="flex items-center space-x-2">
-                  <%= if @current_page > 1 do %>
-                    <.link
-                      navigate={"/properties?page=#{@current_page - 1}"}
-                      class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                    >
-                      Previous
-                    </.link>
-                  <% end %>
+                <!-- Property Details -->
+                <div class="p-4">
+                  <div class="flex items-start justify-between mb-2">
+                    <h3 class="text-lg font-semibold text-gray-900 line-clamp-1">
+                      <div class="text-2xl font-bold text-gray-900">{property.title}</div>
+                    </h3>
+                  </div>
+                  
+                  <div class="text-lg text-gray-600 line-clamp-2">
+                    {property.address}, {property.city}, {property.state}
+                  </div>
 
-                  <%= for page <- max(1, @current_page - 2)..min(@total_pages, @current_page + 2) do %>
-                    <.link
-                      navigate={"/properties?page=#{page}"}
-                      class={[
-                        "px-3 py-2 text-sm font-medium rounded-lg",
-                        if(page == @current_page,
-                          do: "bg-blue-600 text-white",
-                          else: "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50"
-                        )
-                      ]}
-                    >
-                      <%= page %>
-                    </.link>
-                  <% end %>
+                  <!-- Property Stats -->
+                  <div class="flex items-center space-x-4 mb-3 text-sm text-gray-500">
+                    <div class="flex items-center">
+                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                      </svg>
+                      <div class="text-2xl font-bold text-gray-900">{property.bedrooms} beds</div>
+                    </div>
+                    <div class="flex items-center">
+                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8" />
+                      </svg>
+                      <div class="text-2xl font-bold text-gray-900">{property.bathrooms} baths</div>
+                    </div>
+                    <div class="flex items-center">
+                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                      </svg>
+                      <div class="text-2xl font-bold text-gray-900">{format_square_feet(property.square_feet)} sqft</div>
+                    </div>
+                  </div>
 
-                  <%= if @current_page < @total_pages do %>
-                    <.link
-                      navigate={"/properties?page=#{@current_page + 1}"}
-                      class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                    >
-                      Next
-                    </.link>
-                  <% end %>
-                </nav>
-              </div>
-            <% end %>
-          <% else %>
-            <!-- Empty State -->
-            <div class="text-center py-12">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <h3 class="mt-2 text-sm font-medium text-gray-900">No properties found</h3>
-              <p class="mt-1 text-sm text-gray-500">
-                Try adjusting your search criteria or filters.
-              </p>
-              <div class="mt-6">
-                <button
-                  phx-click="clear_filters"
-                  class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Clear Filters
-                </button>
+                  <!-- Price -->
+                  <div class="flex items-center justify-between">
+                    <div class="text-xl font-bold text-gray-900">
+                      <div class="text-2xl font-bold text-gray-900">{format_price(property.price)}</div>
+                    </div>
+                    <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                      View Details
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          <% end %>
-        <% end %>
+          </div>
+
+          <!-- Pagination -->
+          <div :if={@total_pages > 1}>
+            <div class="mt-8 flex items-center justify-center">
+              <nav class="flex items-center space-x-2">
+                <a :if={@current_page > 1}>
+                  <.link
+                    navigate={"/properties?page=#{@current_page - 1}"}
+                    class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Previous
+                  </.link>
+                </a>
+
+                <a :for={page <- max(1, @current_page - 2)..min(@total_pages, @current_page + 2)}>
+                  <.link
+                    navigate={"/properties?page=#{page}"}
+                    class={[
+                      "px-3 py-2 text-sm font-medium rounded-lg",
+                      if(page == @current_page,
+                        do: "bg-blue-600 text-white",
+                        else: "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50"
+                      )
+                    ]}
+                  >
+                    {page}
+                  </.link>
+                </a>
+
+                <a :if={@current_page < @total_pages}>
+                  <.link
+                    navigate={"/properties?page=#{@current_page + 1}"}
+                    class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Next
+                  </.link>
+                </a>
+              </nav>
+            </div>
+          </div>
+        </div>
+        <div :if={!length(@properties) > 0}>
+          <!-- Empty State -->
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No properties found</h3>
+            <p class="mt-1 text-sm text-gray-500">
+              Try adjusting your search criteria or filters.
+            </p>
+            <div class="mt-6">
+              <button
+                phx-click="clear_filters"
+                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

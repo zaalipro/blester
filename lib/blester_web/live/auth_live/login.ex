@@ -80,9 +80,7 @@ defmodule BlesterWeb.AuthLive.Login do
                 placeholder="Email address"
                 value={@user["email"] || ""}
               />
-              <%= if @errors[:email] do %>
-                <p class="mt-1 text-sm text-red-600"><%= @errors[:email] %></p>
-              <% end %>
+              <p :if={@errors[:email]} class="mt-1 text-sm text-red-600">{@errors[:email]}</p>
             </div>
             <div>
               <label for="password" class="sr-only">Password</label>
@@ -95,9 +93,7 @@ defmodule BlesterWeb.AuthLive.Login do
                 placeholder="Password"
                 value={@user["password"] || ""}
               />
-              <%= if @errors[:password] do %>
-                <p class="mt-1 text-sm text-red-600"><%= @errors[:password] %></p>
-              <% end %>
+              <p :if={@errors[:password]} class="mt-1 text-sm text-red-600">{@errors[:password]}</p>
             </div>
           </div>
 

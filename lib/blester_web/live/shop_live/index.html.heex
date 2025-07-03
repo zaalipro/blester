@@ -1,26 +1,22 @@
 <div class="min-h-screen bg-gray-50">
   <!-- Flash Messages -->
-  <%= if Phoenix.Flash.get(@flash, :info) do %>
-    <div class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-bounce" data-flash="info">
-      <div class="flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <%= Phoenix.Flash.get(@flash, :info) %>
-      </div>
+  <div :if={Phoenix.Flash.get(@flash, :info)} class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-bounce" data-flash="info">
+    <div class="flex items-center">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+      {Phoenix.Flash.get(@flash, :info)}
     </div>
-  <% end %>
+  </div>
 
-  <%= if Phoenix.Flash.get(@flash, :error) do %>
-    <div class="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-bounce" data-flash="error">
-      <div class="flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-        <%= Phoenix.Flash.get(@flash, :error) %>
-      </div>
+  <div :if={Phoenix.Flash.get(@flash, :error)} class="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-bounce" data-flash="error">
+    <div class="flex items-center">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+      {Phoenix.Flash.get(@flash, :error)}
     </div>
-  <% end %>
+  </div>
 
   <!-- Hero Section -->
   <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
@@ -63,20 +59,15 @@
               onchange="this.form.submit()"
             >
               <option value="" selected={@category == ""}>All Categories</option>
-              <%= if Enum.empty?(@categories) do %>
-                <option disabled>No categories available</option>
-              <% else %>
-                <%= for category <- @categories do %>
-                  <option value={category} selected={@category == category}><%= category %></option>
-                <% end %>
-              <% end %>
+              <option :if={Enum.empty?(@categories)} disabled>No categories available</option>
+              <option :for={category <- @categories} value={category} selected={@category == category}>{category}</option>
             </select>
           </form>
         </div>
 
         <!-- Results Count -->
         <div class="flex items-center justify-end text-gray-600">
-          <span><%= @total_count %> products found</span>
+          <span>{@total_count} products found</span>
         </div>
       </div>
     </div>
@@ -117,14 +108,14 @@
 
           <!-- Product Info -->
           <div class="p-4">
-            <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2"><%= product.name %></h3>
-            <p class="text-gray-600 text-sm mb-3 line-clamp-2"><%= product.description %></p>
+            <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
+            <p class="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
             <div class="flex items-center justify-between">
-              <span class="text-lg font-bold text-blue-600">$<%= format_price(product.price) %></span>
-              <span class="text-sm text-gray-500"><%= if product.category, do: product.category.name, else: "-" %></span>
+              <span class="text-lg font-bold text-blue-600">${format_price(product.price)}</span>
+              <span class="text-sm text-gray-500">{if product.category, do: product.category.name, else: "-"}</span>
             </div>
             <div class="mt-3">
-              <span class="text-xs text-gray-500">Stock: <%= product.stock_quantity %></span>
+              <span class="text-xs text-gray-500">Stock: {product.stock_quantity}</span>
             </div>
           </div>
         </div>
@@ -135,23 +126,22 @@
     <%= if @total_count > @per_page do %>
       <div class="mt-12 flex justify-center">
         <nav class="flex items-center space-x-2">
-          <%= if @page > 1 do %>
+          {if @page > 1 do
+            ~H"""
             <.link navigate={build_pagination_url(@page - 1, @search, @category)} class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Previous</.link>
-          <% end %>
-          
-          <%= for page_num <- max(1, @page - 2)..min(total_pages(@total_count, @per_page), @page + 2) do %>
-            <% class = [
-              "px-3 py-2 text-sm font-medium rounded-md",
-              (if page_num == @page, do: "bg-blue-600 text-white", else: "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50")
-            ] |> Enum.join(" ") %>
-            <.link navigate={build_pagination_url(page_num, @search, @category)} class={class}>
-              <%= page_num %>
-            </.link>
-          <% end %>
-          
-          <%= if @page < total_pages(@total_count, @per_page) do %>
+            """
+          end}
+          <.link :for={page_num <- max(1, @page - 2)..min(total_pages(@total_count, @per_page), @page + 2)} navigate={build_pagination_url(page_num, @search, @category)} class={[
+            "px-3 py-2 text-sm font-medium rounded-md",
+            (if page_num == @page, do: "bg-blue-600 text-white", else: "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50")
+          ] |> Enum.join(" ")}>
+            {page_num}
+          </.link>
+          {if @page < total_pages(@total_count, @per_page) do
+            ~H"""
             <.link navigate={build_pagination_url(@page + 1, @search, @category)} class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Next</.link>
-          <% end %>
+            """
+          end}
         </nav>
       </div>
     <% end %>
@@ -163,7 +153,7 @@
       <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6">
           <div class="flex justify-between items-start mb-4">
-            <h2 class="text-2xl font-bold text-gray-900"><%= @quick_view_product.name %></h2>
+            <h2 class="text-2xl font-bold text-gray-900">{@quick_view_product.name}</h2>
             <button 
               phx-click="close-quick-view"
               class="text-gray-400 hover:text-gray-600"
@@ -183,23 +173,23 @@
               />
             </div>
             <div>
-              <p class="text-gray-600 mb-4"><%= @quick_view_product.description %></p>
+              <p class="text-gray-600 mb-4">{@quick_view_product.description}</p>
               <div class="space-y-3">
                 <div class="flex justify-between">
                   <span class="text-gray-600">Price:</span>
-                  <span class="text-2xl font-bold text-blue-600">$<%= format_price(@quick_view_product.price) %></span>
+                  <span class="text-2xl font-bold text-blue-600">${format_price(@quick_view_product.price)}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Category:</span>
-                  <span class="text-gray-900"><%= if @quick_view_product.category, do: @quick_view_product.category.name, else: "-" %></span>
+                  <span class="text-gray-900">{if @quick_view_product.category, do: @quick_view_product.category.name, else: "-"}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Stock:</span>
-                  <span class="text-gray-900"><%= @quick_view_product.stock_quantity %></span>
+                  <span class="text-gray-900">{@quick_view_product.stock_quantity}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">SKU:</span>
-                  <span class="text-gray-900"><%= @quick_view_product.sku %></span>
+                  <span class="text-gray-900">{@quick_view_product.sku}</span>
                 </div>
               </div>
               

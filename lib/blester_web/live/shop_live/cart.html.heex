@@ -6,84 +6,82 @@
       <p class="text-gray-600 mt-2">Review your items and proceed to checkout</p>
     </div>
 
-    <%= if length(@cart_items) > 0 do %>
+    <div :if={length(@cart_items) > 0}>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Cart Items -->
         <div class="lg:col-span-2">
           <div class="bg-white rounded-lg shadow-sm">
             <div class="p-6 border-b border-gray-200">
-              <h2 class="text-lg font-semibold text-gray-900">Cart Items (<%= length(@cart_items) %>)</h2>
+              <h2 class="text-lg font-semibold text-gray-900">Cart Items ({length(@cart_items)})</h2>
             </div>
             
             <div class="divide-y divide-gray-200">
-              <%= for item <- @cart_items do %>
-                <div class="p-6">
-                  <div class="flex items-center space-x-4">
-                    <!-- Product Image -->
-                    <div class="flex-shrink-0">
-                      <img 
-                        src={item.product.image_url} 
-                        alt={item.product.name}
-                        class="w-20 h-20 object-cover rounded-lg"
-                      />
-                    </div>
-                    
-                    <!-- Product Info -->
-                    <div class="flex-1 min-w-0">
-                      <h3 class="text-lg font-medium text-gray-900 mb-1">
-                        <.link navigate={"/shop/#{item.product.id}"} class="text-blue-600 hover:underline"><%= item.product.name %></.link>
-                      </h3>
-                      <p class="text-sm text-gray-600 mb-2"><%= item.product.category %></p>
-                      <p class="text-lg font-bold text-blue-600">$<%= format_price(item.product.price) %></p>
-                    </div>
-                    
-                    <!-- Quantity Controls -->
-                    <div class="flex items-center space-x-3">
-                      <button 
-                        phx-click="update-quantity" 
-                        phx-value-item-id={item.id}
-                        phx-value-quantity={item.quantity - 1}
-                        disabled={item.quantity <= 1}
-                        class="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                        </svg>
-                      </button>
-                      <span class="text-lg font-medium text-gray-900 w-12 text-center"><%= item.quantity %></span>
-                      <button 
-                        phx-click="update-quantity" 
-                        phx-value-item-id={item.id}
-                        phx-value-quantity={item.quantity + 1}
-                        disabled={item.quantity >= item.product.stock_quantity}
-                        class="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    <!-- Item Total -->
-                    <div class="text-right">
-                      <p class="text-lg font-bold text-gray-900">$<%= format_price(Decimal.mult(item.product.price, item.quantity)) %></p>
-                      <p class="text-sm text-gray-600">$<%= format_price(item.product.price) %> each</p>
-                    </div>
-                    
-                    <!-- Remove Button -->
+              <div :for={item <- @cart_items} class="p-6">
+                <div class="flex items-center space-x-4">
+                  <!-- Product Image -->
+                  <div class="flex-shrink-0">
+                    <img 
+                      src={item.product.image_url} 
+                      alt={item.product.name}
+                      class="w-20 h-20 object-cover rounded-lg"
+                    />
+                  </div>
+                  
+                  <!-- Product Info -->
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-lg font-medium text-gray-900 mb-1">
+                      <.link navigate={"/shop/#{item.product.id}"} class="text-blue-600 hover:underline">{item.product.name}</.link>
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-2">{item.product.category}</p>
+                    <p class="text-lg font-bold text-blue-600">${format_price(item.product.price)}</p>
+                  </div>
+                  
+                  <!-- Quantity Controls -->
+                  <div class="flex items-center space-x-3">
                     <button 
-                      phx-click="remove-item" 
+                      phx-click="update-quantity" 
                       phx-value-item-id={item.id}
-                      class="text-red-600 hover:text-red-800 p-2"
-                      onclick="return confirm('Are you sure you want to remove this item?')"
+                      phx-value-quantity={item.quantity - 1}
+                      disabled={item.quantity <= 1}
+                      class="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                      </svg>
+                    </button>
+                    <span class="text-lg font-medium text-gray-900 w-12 text-center">{item.quantity}</span>
+                    <button 
+                      phx-click="update-quantity" 
+                      phx-value-item-id={item.id}
+                      phx-value-quantity={item.quantity + 1}
+                      disabled={item.quantity >= item.product.stock_quantity}
+                      class="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                       </svg>
                     </button>
                   </div>
+                  
+                  <!-- Item Total -->
+                  <div class="text-right">
+                    <p class="text-lg font-bold text-gray-900">${format_price(Decimal.mult(item.product.price, item.quantity))}</p>
+                    <p class="text-sm text-gray-600">${format_price(item.product.price)} each</p>
+                  </div>
+                  
+                  <!-- Remove Button -->
+                  <button 
+                    phx-click="remove-item" 
+                    phx-value-item-id={item.id}
+                    class="text-red-600 hover:text-red-800 p-2"
+                    onclick="return confirm('Are you sure you want to remove this item?')"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
                 </div>
-              <% end %>
+              </div>
             </div>
           </div>
         </div>
@@ -95,8 +93,8 @@
             
             <div class="space-y-3 mb-6">
               <div class="flex justify-between text-sm">
-                <span class="text-gray-600">Subtotal (<%= length(@cart_items) %> items)</span>
-                <span class="text-gray-900">$<%= format_price(@total) %></span>
+                <span class="text-gray-600">Subtotal ({length(@cart_items)} items)</span>
+                <span class="text-gray-900">${format_price(@total)}</span>
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">Shipping</span>
@@ -109,7 +107,7 @@
               <div class="border-t border-gray-200 pt-3">
                 <div class="flex justify-between text-lg font-bold">
                   <span class="text-gray-900">Total</span>
-                  <span class="text-blue-600">$<%= format_price(@total) %></span>
+                  <span class="text-blue-600">${format_price(@total)}</span>
                 </div>
               </div>
             </div>
@@ -122,7 +120,8 @@
           </div>
         </div>
       </div>
-    <% else %>
+    </div>
+    <div :if={length(@cart_items) == 0}>
       <!-- Empty Cart -->
       <div class="text-center py-16">
         <div class="mb-8">
@@ -134,6 +133,6 @@
         <p class="text-gray-600 mb-8">Looks like you haven't added any items to your cart yet.</p>
         <.link navigate="/shop" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">Start Shopping</.link>
       </div>
-    <% end %>
+    </div>
   </div>
 </div> 

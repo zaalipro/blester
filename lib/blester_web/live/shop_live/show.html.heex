@@ -1,14 +1,14 @@
 <div class="min-h-screen bg-gray-50 py-8">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <%= if @product do %>
+    <div :if={@product}>
       <!-- Breadcrumb -->
       <nav class="mb-8">
         <ol class="flex items-center space-x-2 text-sm text-gray-600">
           <li><.link navigate="/shop" class="hover:text-blue-600">Shop</.link></li>
           <li><span>/</span></li>
-          <li><.link navigate={"/shop?category=" <> @product.category} class="hover:text-blue-600"><%= @product.category %></.link></li>
+          <li><.link navigate={"/shop?category=" <> @product.category} class="hover:text-blue-600">{@product.category}</.link></li>
           <li><span>/</span></li>
-          <li class="text-gray-900"><%= @product.name %></li>
+          <li class="text-gray-900">{@product.name}</li>
         </ol>
       </nav>
 
@@ -29,30 +29,34 @@
           <!-- Product Info -->
           <div class="p-8">
             <div class="mb-6">
-              <h1 class="text-3xl font-bold text-gray-900 mb-2"><%= @product.name %></h1>
-              <p class="text-2xl font-bold text-blue-600 mb-4">$<%= format_price(@product.price) %></p>
+              <h1 class="text-3xl font-bold text-gray-900 mb-2">{@product.name}</h1>
+              <p class="text-2xl font-bold text-blue-600 mb-4">${format_price(@product.price)}</p>
               <div class="flex items-center space-x-4 text-sm text-gray-600 mb-4">
-                <span>SKU: <%= @product.sku %></span>
-                <span>Category: <%= @product.category %></span>
+                <span>SKU: {@product.sku}</span>
+                <span>Category: {@product.category}</span>
               </div>
               <div class="flex items-center space-x-2">
                 <span class="text-sm text-gray-600">Stock:</span>
-                <span class={"text-sm font-medium #{if @product.stock_quantity > 0, do: "text-green-600", else: "text-red-600"}"}>
-                  <%= if @product.stock_quantity > 0 do %>
-                    <%= @product.stock_quantity %> available
-                  <% else %>
+                <span class={["text-sm font-medium", (if @product.stock_quantity > 0, do: "text-green-600", else: "text-red-600")]}>
+                  {if @product.stock_quantity > 0 do
+                    ~H"""
+                    {@product.stock_quantity} available
+                    """
+                  else
+                    ~H"""
                     Out of stock
-                  <% end %>
+                    """
+                  end}
                 </span>
               </div>
             </div>
 
             <div class="mb-8">
               <h3 class="text-lg font-semibold text-gray-900 mb-3">Description</h3>
-              <p class="text-gray-600 leading-relaxed"><%= @product.description %></p>
+              <p class="text-gray-600 leading-relaxed">{@product.description}</p>
             </div>
 
-            <%= if @product.stock_quantity > 0 do %>
+            <div :if={@product.stock_quantity > 0}>
               <div class="space-y-4">
                 <!-- Quantity Selector -->
                 <div>
@@ -107,14 +111,10 @@
                 <!-- Total Price -->
                 <div class="text-center">
                   <span class="text-sm text-gray-600">Total: </span>
-                  <span class="text-lg font-bold text-blue-600">$<%= format_price(Decimal.mult(@product.price, @quantity)) %></span>
+                  <span class="text-lg font-bold text-blue-600">${format_price(Decimal.mult(@product.price, @quantity))}</span>
                 </div>
               </div>
-            <% else %>
-              <div class="bg-gray-100 rounded-lg p-4 text-center">
-                <p class="text-gray-600 font-medium">This product is currently out of stock</p>
-              </div>
-            <% end %>
+            </div>
           </div>
         </div>
       </div>
@@ -129,12 +129,13 @@
           </div>
         </div>
       </div>
-    <% else %>
+    </div>
+    <div :if={!@product}>
       <div class="text-center py-16">
         <h2 class="text-2xl font-bold text-gray-900 mb-4">Product not found</h2>
         <p class="text-gray-600 mb-8">The product you're looking for doesn't exist or has been removed.</p>
         <.link navigate="/shop" class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Back to Shop</.link>
       </div>
-    <% end %>
+    </div>
   </div>
 </div> 
