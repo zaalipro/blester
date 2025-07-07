@@ -1,7 +1,6 @@
 defmodule BlesterWeb.BlogLive.New do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
-  alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
   import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
 
@@ -18,7 +17,7 @@ defmodule BlesterWeb.BlogLive.New do
       user_id = socket.assigns.current_user_id
       post_params = Map.put(post_params, "author_id", user_id)
 
-      case Accounts.create_post(post_params) do
+      case Blester.Blog.create_post(post_params) do
         {:ok, post} ->
           {:noreply, add_flash_timer(socket, :info, "Post created successfully") |> push_navigate(to: "/blog/#{post.id}")}
         {:error, changeset} ->

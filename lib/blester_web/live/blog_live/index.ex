@@ -1,15 +1,16 @@
 defmodule BlesterWeb.BlogLive.Index do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
-  alias Blester.Accounts
+  alias Blester.Blog
 
   @impl true
   def mount(params, session, socket) do
     user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    cart_count = if user_id, do: Blester.Shop.get_cart_count(user_id), else: 0
+    # Only use Accounts for user logic if needed
     current_user = case user_id do
       nil -> nil
-      id -> case Accounts.get_user(id) do
+      id -> case Blester.Accounts.get_user(id) do
         {:ok, user} -> user
         _ -> nil
       end
@@ -21,7 +22,7 @@ defmodule BlesterWeb.BlogLive.Index do
     per_page = 10
     offset = (page - 1) * per_page
 
-    case Accounts.list_posts_paginated(per_page, offset, search) do
+    case Blester.Blog.list_posts_paginated(per_page, offset, search) do
       {:ok, {posts, total_count}} ->
         total_pages = ceil(total_count / per_page)
         socket = assign(socket, posts: posts, errors: %{}, current_user_id: user_id, current_user: current_user, cart_count: cart_count, total_pages: total_pages, total_count: total_count, current_page: page, search: search)
@@ -61,12 +62,12 @@ defmodule BlesterWeb.BlogLive.Index do
       nil ->
         {:noreply, push_navigate(socket, to: "/login")}
       user_id ->
-        case Accounts.get_post(id) do
+        case Blester.Blog.get_post(id) do
           {:ok, post} ->
             if post.author_id == user_id do
-              case Accounts.delete_post(id) do
+              case Blester.Blog.delete_post(id) do
                 :ok ->
-                  case Accounts.list_posts_paginated(10, 0, socket.assigns.search) do
+                  case Blester.Blog.list_posts_paginated(10, 0, socket.assigns.search) do
                     {:ok, {posts, _total_count}} ->
                       {:noreply, assign(socket, posts: posts) |> add_flash_timer(:info, "Post deleted successfully")}
                     _ ->
@@ -87,7 +88,7 @@ defmodule BlesterWeb.BlogLive.Index do
   defp load_posts(socket, page, search) do
     per_page = 10
     offset = (page - 1) * per_page
-    case Accounts.list_posts_paginated(per_page, offset, search) do
+    case Blester.Blog.list_posts_paginated(per_page, offset, search) do
       {:ok, {posts, total_count}} ->
         total_pages = ceil(total_count / per_page)
         assign(socket, posts: posts, total_count: total_count, current_page: page, total_pages: total_pages, search: search)

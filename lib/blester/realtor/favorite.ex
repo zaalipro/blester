@@ -1,7 +1,6 @@
-defmodule Blester.Accounts.Favorite do
+defmodule Blester.Realtor.Favorite do
   use Ash.Resource,
-    data_layer: AshPostgres.DataLayer,
-    domain: Blester.Accounts
+    data_layer: AshPostgres.DataLayer
 
   postgres do
     table "favorites"
@@ -18,17 +17,8 @@ defmodule Blester.Accounts.Favorite do
     belongs_to :user, Blester.Accounts.User do
       allow_nil? false
     end
-
-    belongs_to :property, Blester.Accounts.Property do
+    belongs_to :property, Blester.Realtor.Property do
       allow_nil? false
     end
-  end
-
-  actions do
-    create :create do
-      accept [:user_id, :property_id]
-    end
-
-    defaults [:read, :destroy]
   end
 end

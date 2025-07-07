@@ -1,6 +1,6 @@
 defmodule BlesterWeb.ShopLive.Cart do
   use BlesterWeb, :live_view
-  alias Blester.Accounts
+  alias Blester.Shop
   alias BlesterWeb.LiveView.Authentication
   import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
   import BlesterWeb.LiveValidations, only: [add_flash_timer: 3]
@@ -8,11 +8,11 @@ defmodule BlesterWeb.ShopLive.Cart do
   @impl true
   def mount(params, session, socket) do
     Authentication.mount_authenticated(params, session, socket, fn _params, socket ->
-      case Accounts.get_cart_items(socket.assigns.current_user_id) do
-        {:ok, cart_items} ->
+      case Shop.get_user_cart(socket.assigns.current_user_id) do
+        cart_items when is_list(cart_items) ->
           total = calculate_total(cart_items)
           {:ok, assign(socket, cart_items: cart_items, total: total)}
-        {:error, _} ->
+        _ ->
           {:ok, assign(socket, cart_items: [], total: Decimal.new(0))}
       end
     end)
@@ -21,16 +21,12 @@ defmodule BlesterWeb.ShopLive.Cart do
   @impl true
   def handle_event("update-quantity", %{"item-id" => item_id, "quantity" => quantity}, socket) do
     with_auth socket do
-      case Accounts.update_cart_item_quantity(item_id, String.to_integer(quantity)) do
+      case Shop.update_cart_item_quantity(item_id, String.to_integer(quantity)) do
         {:ok, _} ->
-          case Accounts.get_cart_items(socket.assigns.current_user_id) do
-            {:ok, cart_items} ->
-              cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
-              total = calculate_total(cart_items)
-              {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Cart updated")}
-            {:error, _} ->
-              {:noreply, add_flash_timer(socket, :error, "Failed to update cart")}
-          end
+          cart_items = Shop.get_user_cart(socket.assigns.current_user_id)
+          cart_count = Shop.get_cart_count(socket.assigns.current_user_id)
+          total = calculate_total(cart_items)
+          {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Cart updated")}
         {:error, _} ->
           {:noreply, add_flash_timer(socket, :error, "Failed to update quantity")}
       end
@@ -40,18 +36,14 @@ defmodule BlesterWeb.ShopLive.Cart do
   @impl true
   def handle_event("remove-item", %{"item-id" => item_id}, socket) do
     with_auth socket do
-      case Accounts.remove_from_cart(item_id) do
+      case Shop.remove_from_cart(item_id) do
         {:ok, _} ->
-          case Accounts.get_cart_items(socket.assigns.current_user_id) do
-            {:ok, cart_items} ->
-              cart_count = Accounts.get_cart_count(socket.assigns.current_user_id)
-              total = calculate_total(cart_items)
-              {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Item removed from cart")}
-            {:error, _} ->
-              {:noreply, add_flash_timer(socket, :error, "Failed to update cart")}
-          end
+          cart_items = Shop.get_user_cart(socket.assigns.current_user_id)
+          cart_count = Shop.get_cart_count(socket.assigns.current_user_id)
+          total = calculate_total(cart_items)
+          {:noreply, assign(socket, cart_items: cart_items, total: total, cart_count: cart_count) |> add_flash_timer(:info, "Item removed from cart")}
         {:error, _} ->
-          {:noreply, add_flash_timer(socket, :error, "Failed to remove item")}
+          {:noreply, add_flash_timer(socket, :error, "Failed to update cart")}
       end
     end
   end
@@ -59,7 +51,7 @@ defmodule BlesterWeb.ShopLive.Cart do
   @impl true
   def handle_event("clear-cart", _params, socket) do
     with_auth socket do
-      case Accounts.clear_cart(socket.assigns.current_user_id) do
+      case Shop.clear_cart(socket.assigns.current_user_id) do
         {:ok, _} ->
           {:noreply, assign(socket, cart_items: [], total: Decimal.new(0), cart_count: 0) |> add_flash_timer(:info, "Cart cleared")}
         {:error, _} ->
@@ -74,10 +66,8 @@ defmodule BlesterWeb.ShopLive.Cart do
   end
 
   defp calculate_total(cart_items) do
-    cart_items
-    |> Enum.reduce(Decimal.new(0), fn item, acc ->
-      item_total = Decimal.mult(item.product.price, item.quantity)
-      Decimal.add(acc, item_total)
+    Enum.reduce(cart_items, Decimal.new(0), fn item, acc ->
+      Decimal.add(acc, Decimal.mult(item.product.price, item.quantity))
     end)
   end
 

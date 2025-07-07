@@ -1,12 +1,13 @@
 defmodule BlesterWeb.AdminLive.Products.New do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
+  alias Blester.Shop
   alias Blester.Accounts
 
   @impl true
   def mount(_params, session, socket) do
     user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    cart_count = if user_id, do: Blester.Shop.get_cart_count(user_id), else: 0
 
     case user_id do
       nil ->
@@ -43,7 +44,7 @@ defmodule BlesterWeb.AdminLive.Products.New do
   def handle_event("save", %{"product" => product_params}, socket) do
     case validate_product(product_params) do
       {:ok, validated_params} ->
-        case Accounts.create_product(validated_params) do
+        case Shop.create_product(validated_params) do
           {:ok, _product} ->
             {:noreply, push_navigate(socket, to: "/admin/products") |> add_flash_timer(:info, "Product created successfully")}
           {:error, changeset} ->

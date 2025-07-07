@@ -1,15 +1,12 @@
-defmodule Blester.Accounts.CartItem do
+defmodule Blester.Shop.CartItem do
   use Ash.Resource,
-    domain: Blester.Accounts,
     data_layer: AshPostgres.DataLayer
 
-  # Table name
   postgres do
     table "cart_items"
     repo Blester.Repo
   end
 
-  # Attributes
   attributes do
     uuid_primary_key :id
     attribute :quantity, :integer, allow_nil?: false, default: 1
@@ -17,14 +14,13 @@ defmodule Blester.Accounts.CartItem do
     update_timestamp :updated_at
   end
 
-  # Validations
   validations do
     validate present([:quantity])
   end
 
   relationships do
     belongs_to :user, Blester.Accounts.User, allow_nil?: false
-    belongs_to :product, Blester.Accounts.Product, allow_nil?: false
+    belongs_to :product, Blester.Shop.Product, allow_nil?: false
   end
 
   actions do

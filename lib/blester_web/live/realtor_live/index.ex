@@ -1,7 +1,7 @@
 defmodule BlesterWeb.RealtorLive.Index do
   use BlesterWeb, :live_view
   require Ash.Query
-  alias Blester.Accounts
+  alias Blester.Realtor
 
   @impl true
   def mount(_params, _session, socket) do
@@ -116,7 +116,7 @@ defmodule BlesterWeb.RealtorLive.Index do
     limit = 12
     offset = (socket.assigns.current_page - 1) * limit
 
-    case Accounts.list_properties_paginated(limit, offset, socket.assigns.search, socket.assigns.filters) do
+    case Blester.Realtor.list_properties_paginated(limit, offset, socket.assigns.search, socket.assigns.filters) do
       {:ok, {properties, total_count}} ->
         total_pages = ceil(total_count / limit)
         assign(socket,
@@ -136,25 +136,7 @@ defmodule BlesterWeb.RealtorLive.Index do
   end
 
   defp toggle_favorite(user_id, property_id) do
-    # Check if favorite exists
-    existing_favorite = Accounts.Favorite
-    |> Ash.Query.filter(user_id: user_id, property_id: property_id)
-    |> Ash.read_one()
-
-    case existing_favorite do
-      {:ok, favorite} ->
-        # Remove favorite
-        Ash.destroy(favorite)
-
-      _ ->
-        # Add favorite
-        Accounts.Favorite
-        |> Ash.Changeset.for_create(:create, %{
-          user_id: user_id,
-          property_id: property_id
-        })
-        |> Ash.create()
-    end
+    Blester.Realtor.toggle_favorite(user_id, property_id)
   end
 
   defp format_price(price) do
@@ -184,17 +166,7 @@ defmodule BlesterWeb.RealtorLive.Index do
   end
 
   defp is_favorite(property_id, user_id) do
-    if user_id do
-      Accounts.Favorite
-      |> Ash.Query.filter(user_id: user_id, property_id: property_id)
-      |> Ash.read_one()
-      |> case do
-        {:ok, _favorite} -> true
-        _ -> false
-      end
-    else
-      false
-    end
+    Blester.Realtor.is_favorite(property_id, user_id)
   end
 
   @default_filters %{

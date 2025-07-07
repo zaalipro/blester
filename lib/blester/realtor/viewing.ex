@@ -1,7 +1,6 @@
-defmodule Blester.Accounts.Viewing do
+defmodule Blester.Realtor.Viewing do
   use Ash.Resource,
-    data_layer: AshPostgres.DataLayer,
-    domain: Blester.Accounts
+    data_layer: AshPostgres.DataLayer
 
   postgres do
     table "viewings"
@@ -11,7 +10,7 @@ defmodule Blester.Accounts.Viewing do
   attributes do
     uuid_primary_key :id
     attribute :scheduled_date, :utc_datetime, allow_nil?: false
-    attribute :status, :string, allow_nil?: false, default: "scheduled" # scheduled, completed, cancelled
+    attribute :status, :string, allow_nil?: false, default: "scheduled"
     attribute :notes, :string
     create_timestamp :inserted_at
     update_timestamp :updated_at
@@ -21,25 +20,11 @@ defmodule Blester.Accounts.Viewing do
     belongs_to :user, Blester.Accounts.User do
       allow_nil? false
     end
-
-    belongs_to :property, Blester.Accounts.Property do
+    belongs_to :property, Blester.Realtor.Property do
       allow_nil? false
     end
-
     belongs_to :agent, Blester.Accounts.User do
       allow_nil? false
     end
-  end
-
-  actions do
-    create :create do
-      accept [:scheduled_date, :notes, :user_id, :property_id, :agent_id]
-    end
-
-    update :update do
-      accept [:scheduled_date, :status, :notes]
-    end
-
-    defaults [:read, :destroy]
   end
 end

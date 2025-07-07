@@ -1,14 +1,13 @@
 defmodule BlesterWeb.BlogLive.Edit do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
-  alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
   import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
     Authentication.mount_authenticated(%{"id" => id}, session, socket, fn _params, socket ->
-      case Accounts.get_post(id) do
+      case Blester.Blog.get_post(id) do
         {:ok, post} ->
           if post.author_id == socket.assigns.current_user.id do
             # Convert Ash struct to map with string keys for template access
@@ -29,7 +28,7 @@ defmodule BlesterWeb.BlogLive.Edit do
   @impl true
   def handle_event("save", %{"post" => post_params}, socket) do
     with_auth socket do
-      case Accounts.update_post(socket.assigns.post_id, post_params) do
+      case Blester.Blog.update_post(socket.assigns.post_id, post_params) do
         {:ok, post} ->
           {:noreply, add_flash_timer(socket, :info, "Post updated successfully") |> push_navigate(to: "/blog/#{post.id}")}
         {:error, changeset} ->

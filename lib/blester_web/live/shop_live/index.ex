@@ -1,14 +1,15 @@
 defmodule BlesterWeb.ShopLive.Index do
   use BlesterWeb, :live_view
+  alias Blester.Shop
   alias Blester.Accounts
 
   @impl true
   def mount(params, session, socket) do
     user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    cart_count = if user_id, do: Shop.get_cart_count(user_id), else: 0
     current_user = case user_id do
       nil -> nil
-      id -> case Accounts.get_user(id) do
+      id -> case Blester.Accounts.get_user(id) do
         {:ok, user} -> user
         _ -> nil
       end
@@ -24,10 +25,10 @@ defmodule BlesterWeb.ShopLive.Index do
     search = Map.get(params, "search", "")
 
     # Get categories for filter dropdown
-    categories = Accounts.get_categories()
+    categories = Shop.get_categories()
 
     # Get products using the paginated function
-    case Accounts.list_products_paginated(per_page, offset, search, category) do
+    case Shop.list_products_paginated(per_page, offset, search, category) do
       {:ok, {products, total_count}} ->
         total_pages = ceil(total_count / per_page)
         {:ok, assign(socket,
@@ -73,7 +74,7 @@ defmodule BlesterWeb.ShopLive.Index do
     category = Map.get(params, "category", socket.assigns.category)
     search = Map.get(params, "search", socket.assigns.search)
 
-    case Accounts.list_products_paginated(per_page, offset, search, category) do
+    case Shop.list_products_paginated(per_page, offset, search, category) do
       {:ok, {products, total_count}} ->
         total_pages = ceil(total_count / per_page)
         {:noreply, assign(socket,
@@ -117,9 +118,9 @@ defmodule BlesterWeb.ShopLive.Index do
       nil ->
         {:noreply, put_flash(socket, :error, "Please log in to add items to cart")}
       user_id ->
-        case Accounts.add_to_cart(user_id, product_id, 1) do
+        case Shop.add_to_cart(user_id, product_id, 1) do
           {:ok, _cart_item} ->
-            cart_count = Accounts.get_cart_count(user_id)
+            cart_count = Shop.get_cart_count(user_id)
             {:noreply, assign(socket, cart_count: cart_count) |> put_flash(:info, "Product added to cart!")}
           {:error, _} ->
             {:noreply, put_flash(socket, :error, "Failed to add product to cart")}
@@ -129,7 +130,7 @@ defmodule BlesterWeb.ShopLive.Index do
 
   @impl true
   def handle_event("quick-view", %{"product-id" => product_id}, socket) do
-    case Accounts.get_product(product_id) do
+    case Shop.get_product(product_id) do
       {:ok, product} ->
         {:noreply, assign(socket, quick_view_product: product)}
       _ ->

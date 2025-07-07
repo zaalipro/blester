@@ -1,18 +1,18 @@
 defmodule BlesterWeb.AdminLive.Orders do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
-  alias Blester.Accounts
+  alias Blester.Shop
 
   @impl true
   def mount(_params, session, socket) do
     user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    cart_count = if user_id, do: Blester.Shop.get_cart_count(user_id), else: 0
 
     case user_id do
       nil ->
         {:ok, push_navigate(socket, to: "/login")}
       user_id ->
-        case Accounts.get_user(user_id) do
+        case Shop.get_user(user_id) do
           {:ok, user} when not is_nil(user) ->
             if user.role == "admin" do
               {:ok, assign(socket,
@@ -57,7 +57,7 @@ defmodule BlesterWeb.AdminLive.Orders do
 
   @impl true
   def handle_event("update-status", %{"id" => id, "status" => status}, socket) do
-    case Accounts.update_order_status(id, status) do
+    case Blester.Shop.update_order_status(id, status) do
       {:ok, _order} ->
         {:noreply, load_orders(socket) |> add_flash_timer(:info, "Order status updated successfully")}
       {:error, _} ->
@@ -73,7 +73,7 @@ defmodule BlesterWeb.AdminLive.Orders do
   defp load_orders(socket) do
     offset = (socket.assigns.page - 1) * socket.assigns.per_page
 
-    case Accounts.list_orders_paginated(
+    case Shop.list_orders_paginated(
       socket.assigns.per_page,
       offset,
       socket.assigns.search,

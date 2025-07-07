@@ -1,18 +1,18 @@
 defmodule BlesterWeb.AdminLive.Products do
   use BlesterWeb, :live_view
-  alias Blester.Accounts
+  alias Blester.Shop
   import BlesterWeb.LiveValidations, only: [add_flash_timer: 3]
 
   @impl true
   def mount(_params, session, socket) do
     user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    cart_count = if user_id, do: Blester.Shop.get_cart_count(user_id), else: 0
 
     case user_id do
       nil ->
         {:ok, push_navigate(socket, to: "/login")}
       user_id ->
-        case Accounts.get_user(user_id) do
+        case Blester.Accounts.get_user(user_id) do
           {:ok, user} when not is_nil(user) ->
             if user.role == "admin" do
               {:ok, assign(socket,
@@ -57,7 +57,7 @@ defmodule BlesterWeb.AdminLive.Products do
 
   @impl true
   def handle_event("delete-product", %{"id" => id}, socket) do
-    case Accounts.delete_product(id) do
+    case Shop.delete_product(id) do
       {:ok, _} ->
         {:noreply, load_products(socket) |> add_flash_timer(:info, "Product deleted successfully")}
       {:error, _} ->
@@ -73,7 +73,7 @@ defmodule BlesterWeb.AdminLive.Products do
   defp load_products(socket) do
     offset = (socket.assigns.page - 1) * socket.assigns.per_page
 
-    case Accounts.list_products_paginated_admin(
+    case Blester.Shop.list_products_paginated_admin(
       socket.assigns.per_page,
       offset,
       socket.assigns.search,

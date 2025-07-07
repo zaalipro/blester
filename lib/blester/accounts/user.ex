@@ -32,19 +32,7 @@ defmodule Blester.Accounts.User do
   end
 
   relationships do
-    has_many :posts, Blester.Accounts.Post, destination_attribute: :author_id
-    has_many :comments, Blester.Accounts.Comment, destination_attribute: :author_id
-    has_many :cart_items, Blester.Accounts.CartItem, destination_attribute: :user_id
-    has_many :orders, Blester.Accounts.Order, destination_attribute: :user_id
-
-    # Realtor relationships
-    has_many :properties_as_agent, Blester.Accounts.Property, destination_attribute: :agent_id
-    has_many :properties_as_owner, Blester.Accounts.Property, destination_attribute: :owner_id
-    has_many :favorites, Blester.Accounts.Favorite, destination_attribute: :user_id
-    has_many :inquiries, Blester.Accounts.Inquiry, destination_attribute: :user_id
-    has_many :viewings, Blester.Accounts.Viewing, destination_attribute: :user_id
-    has_many :inquiries_as_agent, Blester.Accounts.Inquiry, destination_attribute: :agent_id
-    has_many :viewings_as_agent, Blester.Accounts.Viewing, destination_attribute: :agent_id
+    # Removed cross-domain relationships to Blog, Shop, and Property resources
   end
 
   actions do

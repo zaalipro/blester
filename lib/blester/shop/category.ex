@@ -1,6 +1,5 @@
-defmodule Blester.Accounts.Category do
+defmodule Blester.Shop.Category do
   use Ash.Resource,
-    domain: Blester.Accounts,
     data_layer: AshPostgres.DataLayer
 
   postgres do

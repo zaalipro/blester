@@ -1,15 +1,12 @@
-defmodule Blester.Accounts.OrderItem do
+defmodule Blester.Shop.OrderItem do
   use Ash.Resource,
-    domain: Blester.Accounts,
     data_layer: AshPostgres.DataLayer
 
-  # Table name
   postgres do
     table "order_items"
     repo Blester.Repo
   end
 
-  # Attributes
   attributes do
     uuid_primary_key :id
     attribute :quantity, :integer, allow_nil?: false
@@ -19,14 +16,13 @@ defmodule Blester.Accounts.OrderItem do
     update_timestamp :updated_at
   end
 
-  # Validations
   validations do
     validate present([:quantity, :unit_price, :total_price])
   end
 
   relationships do
-    belongs_to :order, Blester.Accounts.Order, allow_nil?: false
-    belongs_to :product, Blester.Accounts.Product, allow_nil?: false
+    belongs_to :order, Blester.Shop.Order, allow_nil?: false
+    belongs_to :product, Blester.Shop.Product, allow_nil?: false
   end
 
   actions do

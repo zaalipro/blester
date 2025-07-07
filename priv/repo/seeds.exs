@@ -2,6 +2,9 @@ import Ecto.Query
 
 # Add sample products for the shop
 alias Blester.Accounts
+alias Blester.Shop
+alias Blester.Realtor
+alias Blester.Blog
 alias Blester.Repo
 
 # Helper to fetch user by email
@@ -233,7 +236,7 @@ if agent && owner do
 
   # Create properties
   Enum.each(properties_data, fn property_data ->
-    case Accounts.create_property(property_data) do
+    case Realtor.create_property(property_data) do
       {:ok, property} ->
         IO.puts("Property created: #{property.title}")
       {:error, changeset} ->
@@ -310,11 +313,11 @@ category_names = products_data |> Enum.map(& &1.category) |> Enum.uniq()
 # Create or fetch categories and build a map of name => id
 category_map =
   Enum.reduce(category_names, %{}, fn name, acc ->
-    case Accounts.create_category(%{name: name}) do
+    case Shop.create_category(%{name: name}) do
       {:ok, category} -> Map.put(acc, name, category.id)
       {:error, _} ->
         # Try to fetch existing category if creation failed (e.g., already exists)
-        case Repo.one(Ecto.Query.from(c in Blester.Accounts.Category, where: c.name == ^name, select: c)) do
+        case Repo.one(Ecto.Query.from(c in Blester.Shop.Category, where: c.name == ^name, select: c)) do
           nil -> acc
           category -> Map.put(acc, name, category.id)
         end
@@ -332,7 +335,7 @@ products_data_with_category_id =
 
 # Create products
 Enum.each(products_data_with_category_id, fn product_data ->
-  case Accounts.create_product(product_data) do
+  case Shop.create_product(product_data) do
     {:ok, product} ->
       IO.puts("Product created: #{product.name}")
     {:error, changeset} ->
@@ -362,7 +365,7 @@ if admin && agent do
 
   # Create posts
   Enum.each(posts_data, fn post_data ->
-    case Accounts.create_post(post_data) do
+    case Blog.create_post(post_data) do
       {:ok, post} ->
         IO.puts("Post created: #{post.title}")
       {:error, changeset} ->

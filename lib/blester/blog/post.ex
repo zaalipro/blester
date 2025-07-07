@@ -1,15 +1,15 @@
-defmodule Blester.Accounts.Comment do
+defmodule Blester.Blog.Post do
   use Ash.Resource,
-    data_layer: AshPostgres.DataLayer,
-    domain: Blester.Accounts
+    data_layer: AshPostgres.DataLayer
 
   postgres do
-    table "comments"
+    table "posts"
     repo Blester.Repo
   end
 
   attributes do
     uuid_primary_key :id
+    attribute :title, :string, allow_nil?: false
     attribute :content, :string, allow_nil?: false
     create_timestamp :inserted_at
     update_timestamp :updated_at
@@ -20,18 +20,16 @@ defmodule Blester.Accounts.Comment do
       allow_nil? false
     end
 
-    belongs_to :post, Blester.Accounts.Post do
-      allow_nil? false
-    end
+    has_many :comments, Blester.Blog.Comment
   end
 
   actions do
     create :create do
-      accept [:content, :author_id, :post_id]
+      accept [:title, :content, :author_id]
     end
 
     update :update do
-      accept [:content]
+      accept [:title, :content]
     end
 
     defaults [:read, :destroy]

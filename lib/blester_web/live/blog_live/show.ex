@@ -1,6 +1,6 @@
 defmodule BlesterWeb.BlogLive.Show do
   use BlesterWeb, :live_view
-  alias Blester.Accounts
+  alias Blester.Blog
   import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
   import BlesterWeb.LiveValidations, only: [add_flash_timer: 3, format_errors: 1]
 
@@ -8,16 +8,16 @@ defmodule BlesterWeb.BlogLive.Show do
   def mount(%{"id" => id}, session, socket) do
     # For public posts, we don't require authentication but still want user info if available
     user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    cart_count = if user_id, do: Blester.Shop.get_cart_count(user_id), else: 0
     current_user = case user_id do
       nil -> nil
-      id -> case Accounts.get_user(id) do
+      id -> case Blester.Accounts.get_user(id) do
         {:ok, user} -> user
         _ -> nil
       end
     end
 
-    case Accounts.get_post(id) do
+    case Blester.Blog.get_post(id) do
       {:ok, post} ->
         {:ok, assign(socket, post: post, comment_content: "", errors: %{}, current_user_id: user_id, current_user: current_user, cart_count: cart_count)}
       {:error, _} ->
@@ -27,9 +27,9 @@ defmodule BlesterWeb.BlogLive.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _url, socket) do
-    case Accounts.get_post(id) do
+    case Blester.Blog.get_post(id) do
       {:ok, post} ->
-        case Accounts.get_comments_for_post(post.id) do
+        case Blester.Blog.get_comments_for_post(post.id) do
           {:ok, comments} ->
             {:noreply,
              assign(socket,
@@ -55,12 +55,12 @@ defmodule BlesterWeb.BlogLive.Show do
       comment_params = Map.put(comment_params, "author_id", socket.assigns.current_user_id)
       comment_params = Map.put(comment_params, "post_id", socket.assigns.post.id)
 
-      case Accounts.create_comment(comment_params) do
+      case Blester.Blog.create_comment(comment_params) do
         {:ok, _comment} ->
           # Reload the post and comments to get updated comments
-          case Accounts.get_post(socket.assigns.post.id) do
+          case Blester.Blog.get_post(socket.assigns.post.id) do
             {:ok, updated_post} ->
-              case Accounts.get_comments_for_post(updated_post.id) do
+              case Blester.Blog.get_comments_for_post(updated_post.id) do
                 {:ok, comments} ->
                   {:noreply,
                     socket
@@ -82,13 +82,13 @@ defmodule BlesterWeb.BlogLive.Show do
   @impl true
   def handle_event("delete-comment", %{"comment-id" => comment_id}, socket) do
     with_auth socket do
-      case Accounts.get_comment(comment_id) do
+      case Blester.Blog.get_comment(comment_id) do
         {:ok, comment} ->
           if comment.author_id == socket.assigns.current_user_id do
-            case Accounts.delete_comment(comment_id) do
+            case Blester.Blog.delete_comment(comment_id) do
               {:ok, _} ->
                 # Reload the post to get updated comments
-                case Accounts.get_post(socket.assigns.post.id) do
+                case Blester.Blog.get_post(socket.assigns.post.id) do
                   {:ok, updated_post} ->
                     {:noreply, assign(socket, post: updated_post) |> add_flash_timer(:info, "Comment deleted successfully")}
                   {:error, _} ->
@@ -112,7 +112,7 @@ defmodule BlesterWeb.BlogLive.Show do
       post = socket.assigns.post
       user = socket.assigns.current_user
       if post && user && post.author_id == user.id do
-        case Accounts.delete_post(id) do
+        case Blester.Blog.delete_post(id) do
           :ok ->
             {:noreply,
              socket

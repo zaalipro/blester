@@ -34,8 +34,8 @@ defmodule Blester.AccountsProductCategoryFilterTest do
   end
 
   test "filter products by category name returns correct products", %{cat1: cat1, cat2: cat2, prod1: prod1, prod2: prod2} do
-    {:ok, {products_coffee, _}} = Accounts.list_products_paginated(10, 0, "", cat1.name)
-    {:ok, {products_tea, _}} = Accounts.list_products_paginated(10, 0, "", cat2.name)
+    {:ok, {products_coffee, _}} = Blester.Shop.list_products_paginated(10, 0, "", cat1.name)
+    {:ok, {products_tea, _}} = Blester.Shop.list_products_paginated(10, 0, "", cat2.name)
 
     assert Enum.any?(products_coffee, &(&1.id == prod1.id))
     refute Enum.any?(products_coffee, &(&1.id == prod2.id))
@@ -44,7 +44,7 @@ defmodule Blester.AccountsProductCategoryFilterTest do
   end
 
   test "filter products by non-existent category returns no products" do
-    {:ok, {products, _}} = Accounts.list_products_paginated(10, 0, "", "NonExistent")
+    {:ok, {products, _}} = Blester.Shop.list_products_paginated(10, 0, "", "NonExistent")
     assert products == []
   end
 end

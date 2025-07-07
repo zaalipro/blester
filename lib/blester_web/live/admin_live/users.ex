@@ -2,11 +2,12 @@ defmodule BlesterWeb.AdminLive.Users do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
   alias Blester.Accounts
+  alias Blester.Shop
 
   @impl true
   def mount(_params, session, socket) do
     user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    cart_count = if user_id, do: Blester.Shop.get_cart_count(user_id), else: 0
 
     case user_id do
       nil ->

@@ -1,14 +1,13 @@
 defmodule BlesterWeb.BlogLive.EditComment do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
-  alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
   import BlesterWeb.LiveView.Authentication, only: [with_auth: 2]
 
   @impl true
   def mount(%{"id" => post_id, "comment_id" => comment_id}, session, socket) do
     Authentication.mount_authenticated(%{"id" => post_id, "comment_id" => comment_id}, session, socket, fn _params, socket ->
-      case {Accounts.get_post(post_id), Accounts.get_comment(comment_id)} do
+      case {Blester.Blog.get_post(post_id), Blester.Blog.get_comment(comment_id)} do
         {{:ok, post}, {:ok, comment}} ->
           if comment.author_id == socket.assigns.current_user.id do
             # Convert Ash struct to map with string keys for template access
@@ -28,7 +27,7 @@ defmodule BlesterWeb.BlogLive.EditComment do
   @impl true
   def handle_event("save", %{"comment" => comment_params}, socket) do
     with_auth socket do
-      case Accounts.update_comment(socket.assigns.comment_id, comment_params) do
+      case Blester.Blog.update_comment(socket.assigns.comment_id, comment_params) do
         {:ok, _comment} ->
           {:noreply, add_flash_timer(socket, :info, "Comment updated successfully") |> push_navigate(to: "/blog/#{socket.assigns.post_id}")}
         {:error, changeset} ->

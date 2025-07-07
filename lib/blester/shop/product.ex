@@ -1,15 +1,12 @@
-defmodule Blester.Accounts.Product do
+defmodule Blester.Shop.Product do
   use Ash.Resource,
-    domain: Blester.Accounts,
     data_layer: AshPostgres.DataLayer
 
-  # Table name
   postgres do
     table "products"
     repo Blester.Repo
   end
 
-  # Attributes
   attributes do
     uuid_primary_key :id
     attribute :name, :string, allow_nil?: false
@@ -25,7 +22,6 @@ defmodule Blester.Accounts.Product do
     update_timestamp :updated_at
   end
 
-  # Validations
   validations do
     validate present([:name, :description, :price, :image_url, :category_id, :sku])
   end
@@ -35,9 +31,9 @@ defmodule Blester.Accounts.Product do
   end
 
   relationships do
-    belongs_to :category, Blester.Accounts.Category
-    has_many :cart_items, Blester.Accounts.CartItem, destination_attribute: :product_id
-    has_many :order_items, Blester.Accounts.OrderItem, destination_attribute: :product_id
+    belongs_to :category, Blester.Shop.Category
+    has_many :cart_items, Blester.Shop.CartItem, destination_attribute: :product_id
+    has_many :order_items, Blester.Shop.OrderItem, destination_attribute: :product_id
   end
 
   actions do

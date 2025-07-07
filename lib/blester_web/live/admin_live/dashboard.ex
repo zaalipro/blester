@@ -1,5 +1,6 @@
 defmodule BlesterWeb.AdminLive.Dashboard do
   use BlesterWeb, :live_view
+  alias Blester.Shop
   alias Blester.Accounts
   alias BlesterWeb.LiveView.Authentication
 
@@ -17,12 +18,12 @@ defmodule BlesterWeb.AdminLive.Dashboard do
 
   defp load_admin_stats do
     # Get basic statistics
-    total_products = case Accounts.count_products() do
+    total_products = case Shop.count_products() do
       {:ok, count} -> count
       _ -> 0
     end
 
-    total_orders = case Accounts.count_orders() do
+    total_orders = case Shop.count_orders() do
       {:ok, count} -> count
       _ -> 0
     end
@@ -32,7 +33,7 @@ defmodule BlesterWeb.AdminLive.Dashboard do
       _ -> 0
     end
 
-    recent_orders = case Accounts.get_recent_orders(5) do
+    recent_orders = case Shop.get_recent_orders(5) do
       {:ok, orders} -> orders
       _ -> []
     end

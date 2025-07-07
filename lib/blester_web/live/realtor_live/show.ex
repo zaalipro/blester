@@ -1,7 +1,7 @@
 defmodule BlesterWeb.RealtorLive.Show do
   use BlesterWeb, :live_view
   require Ash.Query
-  alias Blester.Accounts
+  alias Blester.Realtor
 
   @impl true
   def mount(%{"id" => property_id}, _session, socket) do
@@ -106,44 +106,15 @@ defmodule BlesterWeb.RealtorLive.Show do
   end
 
   defp get_property(property_id) do
-    Accounts.Property
-    |> Ash.Query.filter(id: property_id)
-    |> Ash.Query.load([:agent, :owner, :amenities])
-    |> Ash.read_one()
+    Realtor.get_property(property_id)
   end
 
   defp toggle_favorite(user_id, property_id) do
-    # Check if favorite exists
-    existing_favorite = Accounts.Favorite
-    |> Ash.Query.filter(user_id: user_id, property_id: property_id)
-    |> Ash.read_one()
-
-    case existing_favorite do
-      {:ok, favorite} ->
-        # Remove favorite
-        Ash.destroy(favorite)
-
-      _ ->
-        # Add favorite
-        Accounts.Favorite
-        |> Ash.Changeset.for_create(:create, %{
-          user_id: user_id,
-          property_id: property_id
-        })
-        |> Ash.create()
-    end
+    Realtor.toggle_favorite(user_id, property_id)
   end
 
   defp create_inquiry(inquiry_params, user_id, property) do
-    Accounts.Inquiry
-    |> Ash.Changeset.for_create(:create, %{
-      message: inquiry_params["message"],
-      inquiry_type: inquiry_params["inquiry_type"],
-      user_id: user_id,
-      property_id: property.id,
-      agent_id: property.agent_id
-    })
-    |> Ash.create()
+    Realtor.create_inquiry(inquiry_params, user_id, property)
   end
 
   defp format_price(price) do
@@ -173,17 +144,7 @@ defmodule BlesterWeb.RealtorLive.Show do
   end
 
   defp is_favorite(property_id, user_id) do
-    if user_id do
-      Accounts.Favorite
-      |> Ash.Query.filter(user_id: user_id, property_id: property_id)
-      |> Ash.read_one()
-      |> case do
-        {:ok, _favorite} -> true
-        _ -> false
-      end
-    else
-      false
-    end
+    Realtor.is_favorite(property_id, user_id)
   end
 
   defp format_date(date) do

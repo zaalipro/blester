@@ -1,12 +1,13 @@
 defmodule BlesterWeb.AdminLive.Products.Edit do
   use BlesterWeb, :live_view
   import BlesterWeb.LiveValidations
+  alias Blester.Shop
   alias Blester.Accounts
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
     user_id = session["user_id"]
-    cart_count = if user_id, do: Accounts.get_cart_count(user_id), else: 0
+    cart_count = if user_id, do: Blester.Shop.get_cart_count(user_id), else: 0
 
     case user_id do
       nil ->
@@ -15,7 +16,7 @@ defmodule BlesterWeb.AdminLive.Products.Edit do
         case Accounts.get_user(user_id) do
           {:ok, user} when not is_nil(user) ->
             if user.role == "admin" do
-              case Accounts.get_product(id) do
+              case Blester.Shop.get_product(id) do
                 {:ok, product} ->
                   {:ok, assign(socket,
                     current_user: user,
@@ -48,7 +49,7 @@ defmodule BlesterWeb.AdminLive.Products.Edit do
   def handle_event("save", %{"product" => product_params}, socket) do
     case validate_product(product_params) do
       {:ok, validated_params} ->
-        case Accounts.update_product(socket.assigns.product_id, validated_params) do
+        case Blester.Shop.update_product(socket.assigns.product_id, validated_params) do
           {:ok, _product} ->
             {:noreply, push_navigate(socket, to: "/admin/products") |> add_flash_timer(:info, "Product updated successfully")}
           {:error, changeset} ->
