@@ -1,0 +1,20 @@
+{
+  "name": "assets",
+  "version": "1.0.0",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "npx tailwindcss -c tailwind.config.js -i ./css/app.css -o ../priv/static/assets/app.css --minify && npx esbuild js/app.js --bundle --minify --target=es2017 --outdir=../priv/static/assets",
+    "watch": "npx tailwindcss -c tailwind.config.js -i ./css/app.css -o ../priv/static/assets/app.css --watch & npx esbuild js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.5",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11"
+  }
+}
