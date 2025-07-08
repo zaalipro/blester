@@ -32,7 +32,7 @@ defmodule Blester.Blog do
     Post
     |> Ash.Query.filter(id: id)
     |> Ash.Query.load([:author, comments: [:author]])
-    |> Ash.read_one()
+    |> Ash.read_one(domain: __MODULE__)
   end
 
   @spec list_posts() :: {:ok, [Post.t()]} | {:error, term()}
@@ -52,7 +52,7 @@ defmodule Blester.Blog do
     else
       total_count_query
     end
-    total_count = total_count_query |> Ash.count() |> case do
+    total_count = total_count_query |> Ash.count(domain: __MODULE__) |> case do
       {:ok, count} -> count
       _ -> 0
     end
@@ -66,7 +66,7 @@ defmodule Blester.Blog do
     else
       posts_query
     end
-    case Ash.read(posts_query) do
+    case Ash.read(posts_query, domain: __MODULE__) do
       {:ok, posts} -> {:ok, {posts, total_count}}
       _ -> {:error, :query_failed}
     end
@@ -121,12 +121,12 @@ defmodule Blester.Blog do
   def update_post(post_id, attrs) do
     Post
     |> Ash.Query.filter(id: post_id)
-    |> Ash.read_one()
+    |> Ash.read_one(domain: __MODULE__)
     |> case do
       {:ok, post} ->
         post
         |> Ash.Changeset.for_update(:update, attrs)
-        |> Ash.update()
+        |> Ash.update(domain: __MODULE__)
       error ->
         error
     end

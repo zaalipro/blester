@@ -207,7 +207,7 @@ defmodule Blester.Shop do
   @spec count_orders() :: {:ok, integer()} | {:error, term()}
   def count_orders do
     Order
-    |> Ash.count()
+    |> Ash.count(domain: __MODULE__)
   end
 
   @spec get_recent_orders(integer()) :: {:ok, [Order.t()]} | {:error, term()}
@@ -216,7 +216,7 @@ defmodule Blester.Shop do
     |> Ash.Query.load([:user])
     |> Ash.Query.sort(inserted_at: :desc)
     |> Ash.Query.limit(limit)
-    |> Ash.read()
+    |> Ash.read(domain: __MODULE__)
   end
 
   @spec update_order_status(String.t(), String.t()) :: {:ok, Order.t()} | {:error, term()}
@@ -258,8 +258,13 @@ defmodule Blester.Shop do
     |> Ash.read()
   end
 
-  @spec get_product(String.t()) :: {:ok, any()} | {:error, term()}
-  def get_product(_id), do: {:error, :not_implemented}
+  @spec get_product(String.t()) :: {:ok, Product.t()} | {:error, term()}
+  def get_product(id) do
+    Product
+    |> Ash.Query.filter(id: id)
+    |> Ash.Query.load(:category)
+    |> Ash.read_one(domain: __MODULE__)
+  end
 
   @spec add_to_cart(String.t(), String.t(), integer()) :: {:ok, any()} | {:error, term()}
   def add_to_cart(_user_id, _product_id, _quantity), do: {:error, :not_implemented}
@@ -284,4 +289,10 @@ defmodule Blester.Shop do
 
   @spec update_product(String.t(), map()) :: {:ok, any()} | {:error, term()}
   def update_product(_id, _params), do: {:error, :not_implemented}
+
+  @spec count_products() :: {:ok, integer()} | {:error, term()}
+  def count_products do
+    Product
+    |> Ash.count(domain: __MODULE__)
+  end
 end
