@@ -45,7 +45,7 @@ defmodule Blester.Shop do
     filtered_query = if map_size(filters) > 0, do: Ash.Query.filter(base_query, filters), else: base_query
     total_count =
       filtered_query
-      |> Ash.count()
+      |> Ash.count(domain: __MODULE__)
       |> case do
         {:ok, count} -> count
         _ -> 0
@@ -54,7 +54,7 @@ defmodule Blester.Shop do
     |> Ash.Query.sort(inserted_at: :desc)
     |> Ash.Query.limit(limit)
     |> Ash.Query.offset(offset)
-    case Ash.read(paginated_query) do
+    case Ash.read(paginated_query, domain: __MODULE__) do
       {:ok, results} -> {:ok, {results, total_count}}
       _ -> {:error, :query_failed}
     end
@@ -63,7 +63,7 @@ defmodule Blester.Shop do
   @spec get_categories() :: [String.t()]
   def get_categories do
     Category
-    |> Ash.read()
+    |> Ash.read(domain: __MODULE__)
     |> case do
       {:ok, categories} ->
         categories
@@ -156,7 +156,7 @@ defmodule Blester.Shop do
   def get_cart_count(user_id) do
     CartItem
     |> Ash.Query.filter(user_id: user_id)
-    |> Ash.count()
+    |> Ash.count(domain: __MODULE__)
     |> case do
       {:ok, count} -> count
       _ -> 0
